@@ -22,7 +22,16 @@
       color: #F9FAFB;
     }
     .section-title {
-      @apply text-3xl md:text-4xl font-extrabold tracking-tight;
+      /* Tailwind CDN에서는 @apply가 안 먹어도 큰 문제는 없으니 그냥 둬도 되고,
+         필요 없으면 이 클래스를 안 써도 됩니다. */
+      font-size: 1.875rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    @media (min-width: 768px) {
+      .section-title {
+        font-size: 2.25rem;
+      }
     }
     .accent {
       color: #FFC72C;
@@ -40,7 +49,6 @@
     <header class="sticky top-0 z-30 backdrop-blur bg-black/40 border-b border-white/10">
       <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
         <div class="flex items-center gap-2">
-          <!-- 로고는 assets/logo.png 로 저장해두고 경로 맞춰서 사용 -->
           <!-- <img src="./assets/logo.png" alt="LG Sakers" class="w-8 h-8"> -->
           <span class="font-extrabold text-lg tracking-tight">
             LG Sakers <span class="accent">Marketing Portfolio</span>
@@ -49,6 +57,7 @@
         <div class="hidden md:flex gap-6 text-sm text-slate-200">
           <a href="#intro" class="hover:text-white">Intro</a>
           <a href="#dashboard" class="hover:text-white">Data</a>
+          <a href="#realdata" class="hover:text-white">Real Data</a>
           <a href="#sns" class="hover:text-white">SNS</a>
           <a href="#goods" class="hover:text-white">Goods</a>
           <a href="#ux" class="hover:text-white">Fan UX</a>
@@ -107,7 +116,7 @@
       </div>
     </section>
 
-    <!-- Data Dashboard 섹션 -->
+    <!-- Data Dashboard 섹션 (샘플 차트) -->
     <section id="dashboard" class="border-t border-white/10 bg-black/30">
       <div class="max-w-6xl mx-auto px-4 py-16">
         <h2 class="section-title mb-3">
@@ -131,18 +140,53 @@
       </div>
     </section>
 
-    <section class="max-w-6xl mx-auto px-4 py-16">
-  <h2 class="text-3xl font-extrabold mb-4">
-    2024-25 LG 세이커스 실제 데이터 차트
-  </h2>
-  <p class="text-sm text-slate-200 mb-4">
-    Python으로 수집한 위키 데이터를 기반으로 만든 실데이터 차트입니다.
-  </p>
+    <!-- Real Data 섹션: JSON + Chart.js -->
+    <section id="realdata" class="border-t border-white/10 bg-black/40">
+      <div class="max-w-6xl mx-auto px-4 py-16">
+        <h2 class="text-3xl md:text-4xl font-extrabold mb-4">
+          2024-25 LG 세이커스 <span class="accent">실제 데이터</span> 차트
+        </h2>
+        <p class="text-sm md:text-base text-slate-200 mb-6 max-w-3xl">
+          Python 스크립트로 위키 데이터를 수집한 뒤, JSON 파일을 Chart.js에 직접 연결해
+          승·패·득점·실점·득실차를 시각화한 섹션입니다.
+        </p>
 
-  <!-- 여기로 JS에서 그립니다 -->
-  <canvas id="lgChart" height="150"></canvas>
-</section>
+        <canvas id="lgChart" height="150"></canvas>
+      </div>
 
+      <!-- JSON 요약 카드 -->
+      <div class="max-w-6xl mx-auto px-4 pb-16">
+        <div class="grid md:grid-cols-3 gap-4 text-sm">
+          <div class="bg-white/5 rounded-2xl p-4">
+            <p class="text-xs text-slate-400 mb-1">정규리그 성적</p>
+            <p class="text-lg font-extrabold">
+              <span id="winsValue">-</span>승
+              <span id="lossesValue">-</span>패
+            </p>
+            <p class="text-[11px] text-yellow-300 mt-1">
+              승률 <span id="winPctValue">-</span>%
+            </p>
+          </div>
+
+          <div class="bg-white/5 rounded-2xl p-4">
+            <p class="text-xs text-slate-400 mb-1">총 득·실점</p>
+            <p class="text-lg font-extrabold">
+              득점 <span id="pfValue">-</span> · 실점 <span id="paValue">-</span>
+            </p>
+            <p class="text-[11px] text-emerald-300 mt-1">
+              득실차 <span id="diffValue">-</span>
+            </p>
+          </div>
+
+          <div class="bg-white/5 rounded-2xl p-4">
+            <p class="text-xs text-slate-400 mb-1">요약 인사이트</p>
+            <p class="text-[11px] text-slate-200 leading-relaxed" id="summaryText">
+              JSON 데이터를 불러오는 중입니다...
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- SNS & Fan Behavior 섹션 -->
     <section id="sns" class="border-t border-white/10">
@@ -422,7 +466,11 @@
         },
         options: {
           responsive: true,
-          plugins: { legend: { labels: { color: "#E5E7EB", font: { size: 10 } } } },
+          plugins: {
+            legend: {
+              labels: { color: "#E5E7EB", font: { size: 10 } }
+            }
+          },
           scales: {
             r: {
               angleLines: { color: "rgba(148, 163, 184, 0.4)" },
@@ -466,62 +514,99 @@
       });
     }
 
-      fetch("lg_sakers_standings_2024_25.json")
-    .then(res => res.json())
-    .then(data => {
-      console.log("LG Sakers JSON Loaded:", data);
+    // ✅ 실제 LG 세이커스 JSON 데이터를 불러와서 차트 + 요약 카드에 반영
+    fetch("lg_sakers_standings_2024_25.json")
+      .then(res => res.json())
+      .then(data => {
+        console.log("LG Sakers JSON Loaded:", data);
 
-      const lgCtx = document.getElementById("lgChart");
-      if (!lgCtx) return;
-
-      new Chart(lgCtx, {
-        type: "bar",
-        data: {
-          labels: ["승", "패", "득점", "실점", "득실차"],
-          datasets: [{
-            label: "2024-25 LG 세이커스 (실제 데이터)",
-            data: [
-              data.wins,
-              data.losses,
-              data.points_for,
-              data.points_against,
-              data.point_diff
-            ],
-            backgroundColor: [
-              "#FFC72C",
-              "#f97373",
-              "#60a5fa",
-              "#a78bfa",
-              "#34d399"
-            ]
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              labels: {
-                color: "#E5E7EB",
-                font: { size: 10 }
+        const lgCtx = document.getElementById("lgChart");
+        if (lgCtx) {
+          new Chart(lgCtx, {
+            type: "bar",
+            data: {
+              labels: ["승", "패", "득점", "실점", "득실차"],
+              datasets: [{
+                label: "2024-25 LG 세이커스 (실제 데이터)",
+                data: [
+                  data.wins,
+                  data.losses,
+                  data.points_for,
+                  data.points_against,
+                  data.point_diff
+                ],
+                backgroundColor: [
+                  "#FFC72C",
+                  "#f97373",
+                  "#60a5fa",
+                  "#a78bfa",
+                  "#34d399"
+                ]
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  labels: {
+                    color: "#E5E7EB",
+                    font: { size: 10 }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  ticks: { color: "#E5E7EB", font: { size: 10 } },
+                  grid: { color: "rgba(148, 163, 184, 0.2)" }
+                },
+                y: {
+                  ticks: { color: "#E5E7EB", font: { size: 10 } },
+                  grid: { color: "rgba(148, 163, 184, 0.2)" }
+                }
               }
             }
-          },
-          scales: {
-            x: {
-              ticks: { color: "#E5E7EB", font: { size: 10 } },
-              grid: { color: "rgba(148, 163, 184, 0.2)" }
-            },
-            y: {
-              ticks: { color: "#E5E7EB", font: { size: 10 } },
-              grid: { color: "rgba(148, 163, 184, 0.2)" }
-            }
+          });
+        }
+
+        // 요약 카드 채우기
+        const winsEl = document.getElementById("winsValue");
+        const lossesEl = document.getElementById("lossesValue");
+        const winPctEl = document.getElementById("winPctValue");
+        const pfEl = document.getElementById("pfValue");
+        const paEl = document.getElementById("paValue");
+        const diffEl = document.getElementById("diffValue");
+        const summaryEl = document.getElementById("summaryText");
+
+        if (winsEl && lossesEl && winPctEl && pfEl && paEl && diffEl && summaryEl) {
+          winsEl.textContent = data.wins;
+          lossesEl.textContent = data.losses;
+          winPctEl.textContent = data.win_pct.toFixed(1);
+          pfEl.textContent = data.points_for.toLocaleString();
+          paEl.textContent = data.points_against.toLocaleString();
+          diffEl.textContent = data.point_diff > 0
+            ? `+${data.point_diff}`
+            : data.point_diff;
+
+          const msgParts = [];
+          msgParts.push(`총 ${data.games}경기 ${data.wins}승 ${data.losses}패, 승률 ${data.win_pct.toFixed(1)}%`);
+          if (data.point_diff > 0) {
+            msgParts.push(`득점이 실점보다 ${data.point_diff}점 더 많아 공수 밸런스가 좋습니다.`);
+          } else if (data.point_diff < 0) {
+            msgParts.push(`실점이 득점보다 ${Math.abs(data.point_diff)}점 많아 수비/실책 보완이 필요합니다.`);
+          } else {
+            msgParts.push(`득점과 실점이 같아 접전 경기가 많았던 시즌입니다.`);
           }
+
+          summaryEl.textContent = msgParts.join(" · ");
+        }
+      })
+      .catch(err => {
+        console.error("JSON 로드 실패:", err);
+        const summaryEl = document.getElementById("summaryText");
+        if (summaryEl) {
+          summaryEl.textContent = "실제 데이터를 불러오는 데 실패했습니다. 서버/파일 경로를 확인해주세요.";
         }
       });
-    })
-    .catch(err => {
-      console.error("JSON 로드 실패:", err);
-    });
   </script>
 </body>
 </html>
