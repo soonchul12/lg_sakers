@@ -131,6 +131,19 @@
       </div>
     </section>
 
+    <section class="max-w-6xl mx-auto px-4 py-16">
+  <h2 class="text-3xl font-extrabold mb-4">
+    2024-25 LG 세이커스 실제 데이터 차트
+  </h2>
+  <p class="text-sm text-slate-200 mb-4">
+    Python으로 수집한 위키 데이터를 기반으로 만든 실데이터 차트입니다.
+  </p>
+
+  <!-- 여기로 JS에서 그립니다 -->
+  <canvas id="lgChart" height="150"></canvas>
+</section>
+
+
     <!-- SNS & Fan Behavior 섹션 -->
     <section id="sns" class="border-t border-white/10">
       <div class="max-w-6xl mx-auto px-4 py-16 grid md:grid-cols-2 gap-10 items-start">
@@ -452,6 +465,63 @@
         }
       });
     }
+
+      fetch("lg_sakers_standings_2024_25.json")
+    .then(res => res.json())
+    .then(data => {
+      console.log("LG Sakers JSON Loaded:", data);
+
+      const lgCtx = document.getElementById("lgChart");
+      if (!lgCtx) return;
+
+      new Chart(lgCtx, {
+        type: "bar",
+        data: {
+          labels: ["승", "패", "득점", "실점", "득실차"],
+          datasets: [{
+            label: "2024-25 LG 세이커스 (실제 데이터)",
+            data: [
+              data.wins,
+              data.losses,
+              data.points_for,
+              data.points_against,
+              data.point_diff
+            ],
+            backgroundColor: [
+              "#FFC72C",
+              "#f97373",
+              "#60a5fa",
+              "#a78bfa",
+              "#34d399"
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              labels: {
+                color: "#E5E7EB",
+                font: { size: 10 }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: "#E5E7EB", font: { size: 10 } },
+              grid: { color: "rgba(148, 163, 184, 0.2)" }
+            },
+            y: {
+              ticks: { color: "#E5E7EB", font: { size: 10 } },
+              grid: { color: "rgba(148, 163, 184, 0.2)" }
+            }
+          }
+        }
+      });
+    })
+    .catch(err => {
+      console.error("JSON 로드 실패:", err);
+    });
   </script>
 </body>
 </html>
