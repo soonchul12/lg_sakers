@@ -152,6 +152,9 @@
         <!-- 정규리그 성적 요약 차트 -->
         <canvas id="lgChart" height="150"></canvas>
 
+        <!-- 관중수 차트 -->
+        <canvas id="crowdChart" height="160"></canvas>
+
         <!-- 홈/원정 득점·실점 비교 차트 -->
         <div class="mt-10">
           <h3 class="font-semibold mb-3 text-sm">홈 vs 원정 평균 득점·실점 (실제 데이터)</h3>
@@ -677,6 +680,48 @@
       .catch(err => {
         console.error("JSON 로드 실패 (home/away):", err);
       });
+
+// 관중수 차트
+      fetch("lg_crowd.json")
+  .then(res => res.json())
+  .then(rows => {
+    const labels = rows.map(r => r["날짜"]);
+    const values = rows.map(r => r["관중수"]);
+
+    const ctx = document.getElementById("crowdChart");
+
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "LG 세이커스 홈 관중수",
+          data: values,
+          borderColor: "#FFC72C",
+          backgroundColor: "rgba(255, 199, 44, 0.3)",
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            labels: { color: "#E5E7EB" }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: "#E5E7EB" },
+            grid: { color: "rgba(255,255,255,0.1)" }
+          },
+          y: {
+            ticks: { color: "#E5E7EB" },
+            grid: { color: "rgba(255,255,255,0.1)" }
+          }
+        }
+      }
+    });
+  });
   </script>
 </body>
 </html>
