@@ -15,29 +15,8 @@
   <link rel="stylesheet" as="style"
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
 
-  <style>
-    body {
-      font-family: "Pretendard", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #020617; /* 아주 어두운 네이비 */
-      color: #F9FAFB;
-    }
-    .section-title {
-      font-size: 1.875rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-    @media (min-width: 768px) {
-      .section-title {
-        font-size: 2.25rem;
-      }
-    }
-    .accent {
-      color: #FFC72C;
-    }
-    .bg-sakers {
-      background: radial-gradient(circle at top, #3F0003 0, #020617 55%, #020617 100%);
-    }
-  </style>
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="bg-sakers text-slate-50">
   <!-- 전체 컨테이너 -->
@@ -152,8 +131,27 @@
         <!-- 정규리그 성적 요약 차트 -->
         <canvas id="lgChart" height="150"></canvas>
 
-        <!-- 관중수 차트 -->
-        <canvas id="crowdChart" height="160"></canvas>
+        <!-- 년도별 평균 관중수 차트 -->
+        <div class="mt-10">
+          <h3 class="font-semibold mb-3 text-sm">시즌별 평균 관중수 (실제 데이터)</h3>
+          <canvas id="seasonAvgCrowdChart" height="180"></canvas>
+        </div>
+
+        <!-- 날짜별 관중수 차트 (10개씩 표시) -->
+        <div class="mt-10">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-sm">경기별 관중수 (실제 데이터)</h3>
+            <div class="flex gap-2">
+              <button id="prevCrowdBtn" class="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                ← 이전 10경기
+              </button>
+              <button id="nextCrowdBtn" class="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                다음 10경기 →
+              </button>
+            </div>
+          </div>
+          <canvas id="crowdChart" height="160"></canvas>
+        </div>
 
         <!-- 홈/원정 득점·실점 비교 차트 -->
         <div class="mt-10">
@@ -366,362 +364,6 @@
   </div>
 
   <!-- Chart.js 초기화 스크립트 -->
-  <script>
-    // 공통 옵션
-    const commonOptions = {
-      responsive: true,
-      plugins: {
-        legend: {
-          labels: {
-            color: "#E5E7EB",
-            font: { size: 10 }
-          }
-        }
-      },
-      scales: {
-        x: {
-          ticks: { color: "#E5E7EB", font: { size: 10 } },
-          grid: { color: "rgba(148, 163, 184, 0.2)" }
-        },
-        y: {
-          ticks: { color: "#E5E7EB", font: { size: 10 } },
-          grid: { color: "rgba(148, 163, 184, 0.2)" }
-        }
-      }
-    };
-
-    // Hero 미니 승률 차트 (샘플)
-    const heroCtx = document.getElementById("heroWinRateChart");
-    if (heroCtx) {
-      new Chart(heroCtx, {
-        type: "line",
-        data: {
-          labels: ["2019-20", "20-21", "21-22", "22-23", "23-24", "24-25"],
-          datasets: [{
-            label: "승률(샘플)",
-            data: [0.38, 0.45, 0.44, 0.67, 0.67, 0.63],
-            borderColor: "#FFC72C",
-            tension: 0.3
-          }]
-        },
-        options: {
-          ...commonOptions,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { display: false },
-            y: { display: false }
-          }
-        }
-      });
-    }
-
-    // 시즌 승률 차트 (샘플)
-    const seasonCtx = document.getElementById("seasonWinRateChart");
-    if (seasonCtx) {
-      new Chart(seasonCtx, {
-        type: "bar",
-        data: {
-          labels: ["20-21", "21-22", "22-23", "23-24", "24-25"],
-          datasets: [{
-            label: "승률(샘플)",
-            data: [0.35, 0.44, 0.67, 0.67, 0.63],
-            backgroundColor: "rgba(248, 250, 252, 0.7)"
-          }]
-        },
-        options: commonOptions
-      });
-    }
-
-    // 홈 경기 득점/실점 차트 (샘플)
-    const homeCtx = document.getElementById("homePtsChart");
-    if (homeCtx) {
-      new Chart(homeCtx, {
-        type: "line",
-        data: {
-          labels: ["1R", "2R", "3R", "4R", "5R"],
-          datasets: [
-            {
-              label: "득점",
-              data: [80, 84, 83, 81, 83],
-              borderColor: "#FFC72C",
-              tension: 0.3
-            },
-            {
-              label: "실점",
-              data: [78, 77, 76, 75, 77],
-              borderColor: "#f97373",
-              tension: 0.3
-            }
-          ]
-        },
-        options: commonOptions
-      });
-    }
-
-    // SNS 타입별 참여율 (샘플)
-    const snsCtx = document.getElementById("snsTypeChart");
-    if (snsCtx) {
-      new Chart(snsCtx, {
-        type: "radar",
-        data: {
-          labels: ["하이라이트", "사진", "카드뉴스", "밈 콘텐츠", "이벤트 공지"],
-          datasets: [{
-            label: "참여율(샘플, 상대값)",
-            data: [90, 70, 55, 95, 65],
-            borderColor: "#FFC72C",
-            backgroundColor: "rgba(250, 204, 21, 0.2)"
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              labels: { color: "#E5E7EB", font: { size: 10 } }
-            }
-          },
-          scales: {
-            r: {
-              angleLines: { color: "rgba(148, 163, 184, 0.4)" },
-              grid: { color: "rgba(148, 163, 184, 0.3)" },
-              pointLabels: { color: "#E5E7EB", font: { size: 10 } },
-              ticks: { display: false }
-            }
-          }
-        }
-      });
-    }
-
-    // 굿즈 매출 비중 (샘플)
-    const goodsCtx = document.getElementById("goodsChart");
-    if (goodsCtx) {
-      new Chart(goodsCtx, {
-        type: "doughnut",
-        data: {
-          labels: ["의류", "머플러/응원도구", "피규어/포토카드", "기타"],
-          datasets: [{
-            data: [40, 30, 20, 10],
-            backgroundColor: [
-              "#FFC72C",
-              "rgba(248, 250, 252, 0.9)",
-              "rgba(148, 163, 184, 0.9)",
-              "rgba(30, 64, 175, 0.9)"
-            ]
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              labels: {
-                color: "#E5E7EB",
-                font: { size: 10 }
-              }
-            }
-          }
-        }
-      });
-    }
-
-    // ✅ 실제 LG 세이커스 정규리그 JSON 데이터를 불러와서 차트 + 요약 카드에 반영
-    fetch("lg_sakers_standings_2024_25.json")
-      .then(res => res.json())
-      .then(data => {
-        console.log("LG Sakers JSON Loaded:", data);
-
-        const lgCtx = document.getElementById("lgChart");
-        if (lgCtx) {
-          new Chart(lgCtx, {
-            type: "bar",
-            data: {
-              labels: ["승", "패", "득점", "실점", "득실차"],
-              datasets: [{
-                label: "2024-25 LG 세이커스 (실제 데이터)",
-                data: [
-                  data.wins,
-                  data.losses,
-                  data.points_for,
-                  data.points_against,
-                  data.point_diff
-                ],
-                backgroundColor: [
-                  "#FFC72C",
-                  "#f97373",
-                  "#60a5fa",
-                  "#a78bfa",
-                  "#34d399"
-                ]
-              }]
-            },
-            options: {
-              responsive: true,
-              plugins: {
-                legend: {
-                  labels: {
-                    color: "#E5E7EB",
-                    font: { size: 10 }
-                  }
-                }
-              },
-              scales: {
-                x: {
-                  ticks: { color: "#E5E7EB", font: { size: 10 } },
-                  grid: { color: "rgba(148, 163, 184, 0.2)" }
-                },
-                y: {
-                  ticks: { color: "#E5E7EB", font: { size: 10 } },
-                  grid: { color: "rgba(148, 163, 184, 0.2)" }
-                }
-              }
-            }
-          });
-        }
-
-        // 요약 카드 채우기
-        const winsEl = document.getElementById("winsValue");
-        const lossesEl = document.getElementById("lossesValue");
-        const winPctEl = document.getElementById("winPctValue");
-        const pfEl = document.getElementById("pfValue");
-        const paEl = document.getElementById("paValue");
-        const diffEl = document.getElementById("diffValue");
-        const summaryEl = document.getElementById("summaryText");
-
-        if (winsEl && lossesEl && winPctEl && pfEl && paEl && diffEl && summaryEl) {
-          winsEl.textContent = data.wins;
-          lossesEl.textContent = data.losses;
-          winPctEl.textContent = data.win_pct.toFixed(1);
-          pfEl.textContent = data.points_for.toLocaleString();
-          paEl.textContent = data.points_against.toLocaleString();
-          diffEl.textContent = data.point_diff > 0
-            ? `+${data.point_diff}`
-            : data.point_diff;
-
-          const msgParts = [];
-          msgParts.push(`총 ${data.games}경기 ${data.wins}승 ${data.losses}패, 승률 ${data.win_pct.toFixed(1)}%`);
-          if (data.point_diff > 0) {
-            msgParts.push(`득점이 실점보다 ${data.point_diff}점 더 많아 공수 밸런스가 좋습니다.`);
-          } else if (data.point_diff < 0) {
-            msgParts.push(`실점이 득점보다 ${Math.abs(data.point_diff)}점 많아 수비/실책 보완이 필요합니다.`);
-          } else {
-            msgParts.push(`득점과 실점이 같아 접전 경기가 많았던 시즌입니다.`);
-          }
-
-          summaryEl.textContent = msgParts.join(" · ");
-        }
-      })
-      .catch(err => {
-        console.error("JSON 로드 실패 (standings):", err);
-        const summaryEl = document.getElementById("summaryText");
-        if (summaryEl) {
-          summaryEl.textContent = "실제 데이터를 불러오는 데 실패했습니다. 서버/파일 경로를 확인해주세요.";
-        }
-      });
-
-    // ✅ 홈/원정 득점·실점 JSON(lg_home_away_points.json) 불러와서 차트로 표시
-    // JSON 형식 (네가 보낸 그대로):
-    // {
-    //   "home_points_for": 82.4,
-    //   "home_points_against": 76.1,
-    //   "away_points_for": 79.3,
-    //   "away_points_against": 81.0
-    // }
-    fetch("lg_home_away_points.json")
-      .then(res => res.json())
-      .then(data => {
-        console.log("LG Home/Away JSON Loaded:", data);
-
-        const ctx = document.getElementById("lgHomeAwayChart");
-        if (!ctx) return;
-
-        const homeFor = data.home_points_for;
-        const homeAgainst = data.home_points_against;
-        const awayFor = data.away_points_for;
-        const awayAgainst = data.away_points_against;
-
-        new Chart(ctx, {
-          type: "bar",
-          data: {
-            labels: ["홈 득점", "홈 실점", "원정 득점", "원정 실점"],
-            datasets: [
-              {
-                label: "평균 점수 (2024-25 실제 데이터)",
-                data: [homeFor, homeAgainst, awayFor, awayAgainst],
-                backgroundColor: [
-                  "#FFC72C",
-                  "#f97373",
-                  "#60a5fa",
-                  "#a78bfa"
-                ]
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                labels: {
-                  color: "#E5E7EB",
-                  font: { size: 10 }
-                }
-              }
-            },
-            scales: {
-              x: {
-                ticks: { color: "#E5E7EB", font: { size: 10 } },
-                grid: { color: "rgba(148, 163, 184, 0.2)" }
-              },
-              y: {
-                ticks: { color: "#E5E7EB", font: { size: 10 } },
-                grid: { color: "rgba(148, 163, 184, 0.2)" }
-              }
-            }
-          }
-        });
-      })
-      .catch(err => {
-        console.error("JSON 로드 실패 (home/away):", err);
-      });
-
-// 관중수 차트
-      fetch("lg_crowd.json")
-  .then(res => res.json())
-  .then(rows => {
-    const labels = rows.map(r => r["날짜"]);
-    const values = rows.map(r => r["관중수"]);
-
-    const ctx = document.getElementById("crowdChart");
-
-    new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: labels,
-        datasets: [{
-          label: "LG 세이커스 홈 관중수",
-          data: values,
-          borderColor: "#FFC72C",
-          backgroundColor: "rgba(255, 199, 44, 0.3)",
-          tension: 0.3
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            labels: { color: "#E5E7EB" }
-          }
-        },
-        scales: {
-          x: {
-            ticks: { color: "#E5E7EB" },
-            grid: { color: "rgba(255,255,255,0.1)" }
-          },
-          y: {
-            ticks: { color: "#E5E7EB" },
-            grid: { color: "rgba(255,255,255,0.1)" }
-          }
-        }
-      }
-    });
-  });
-  </script>
+  <script src="charts.js"></script>
 </body>
 </html>

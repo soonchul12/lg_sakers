@@ -1,0 +1,22 @@
+body {
+  font-family: "Pretendard", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #020617; /* 아주 어두운 네이비 */
+  color: #F9FAFB;
+}
+.section-title {
+  font-size: 1.875rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+@media (min-width: 768px) {
+  .section-title {
+    font-size: 2.25rem;
+  }
+}
+.accent {
+  color: #FFC72C;
+}
+.bg-sakers {
+  background: radial-gradient(circle at top, #3F0003 0, #020617 55%, #020617 100%);
+}
+
