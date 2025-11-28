@@ -22,7 +22,14 @@
       color: #F9FAFB;
     }
     .section-title {
-      @apply text-3xl md:text-4xl font-extrabold tracking-tight;
+      font-size: 1.875rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    @media (min-width: 768px) {
+      .section-title {
+        font-size: 2.25rem;
+      }
     }
     .accent {
       color: #FFC72C;
@@ -40,7 +47,6 @@
     <header class="sticky top-0 z-30 backdrop-blur bg-black/40 border-b border-white/10">
       <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
         <div class="flex items-center gap-2">
-          <!-- 로고는 assets/logo.png 로 저장해두고 경로 맞춰서 사용 -->
           <!-- <img src="./assets/logo.png" alt="LG Sakers" class="w-8 h-8"> -->
           <span class="font-extrabold text-lg tracking-tight">
             LG Sakers <span class="accent">Marketing Portfolio</span>
@@ -49,6 +55,7 @@
         <div class="hidden md:flex gap-6 text-sm text-slate-200">
           <a href="#intro" class="hover:text-white">Intro</a>
           <a href="#dashboard" class="hover:text-white">Data</a>
+          <a href="#realdata" class="hover:text-white">Real Data</a>
           <a href="#sns" class="hover:text-white">SNS</a>
           <a href="#goods" class="hover:text-white">Goods</a>
           <a href="#ux" class="hover:text-white">Fan UX</a>
@@ -107,7 +114,7 @@
       </div>
     </section>
 
-    <!-- Data Dashboard 섹션 -->
+    <!-- Data Dashboard 섹션 (샘플 차트) -->
     <section id="dashboard" class="border-t border-white/10 bg-black/30">
       <div class="max-w-6xl mx-auto px-4 py-16">
         <h2 class="section-title mb-3">
@@ -126,6 +133,61 @@
           <div class="bg-white/5 rounded-3xl p-5">
             <h3 class="font-semibold mb-3 text-sm">홈 경기 평균 득점 vs 실점(샘플)</h3>
             <canvas id="homePtsChart" height="180"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Real Data 섹션: JSON + Chart.js -->
+    <section id="realdata" class="border-t border-white/10 bg-black/40">
+      <div class="max-w-6xl mx-auto px-4 py-16">
+        <h2 class="text-3xl md:text-4xl font-extrabold mb-4">
+          2024-25 LG 세이커스 <span class="accent">실제 데이터</span> 차트
+        </h2>
+        <p class="text-sm md:text-base text-slate-200 mb-6 max-w-3xl">
+          Python 스크립트로 위키 데이터를 수집한 뒤, JSON 파일을 Chart.js에 직접 연결해
+          승·패·득점·실점·득실차를 시각화한 섹션입니다.
+        </p>
+
+        <!-- 정규리그 성적 요약 차트 -->
+        <canvas id="lgChart" height="150"></canvas>
+
+        <!-- 홈/원정 득점·실점 비교 차트 -->
+        <div class="mt-10">
+          <h3 class="font-semibold mb-3 text-sm">홈 vs 원정 평균 득점·실점 (실제 데이터)</h3>
+          <canvas id="lgHomeAwayChart" height="180"></canvas>
+        </div>
+      </div>
+
+      <!-- JSON 요약 카드 -->
+      <div class="max-w-6xl mx-auto px-4 pb-16">
+        <div class="grid md:grid-cols-3 gap-4 text-sm">
+          <div class="bg-white/5 rounded-2xl p-4">
+            <p class="text-xs text-slate-400 mb-1">정규리그 성적</p>
+            <p class="text-lg font-extrabold">
+              <span id="winsValue">-</span>승
+              <span id="lossesValue">-</span>패
+            </p>
+            <p class="text-[11px] text-yellow-300 mt-1">
+              승률 <span id="winPctValue">-</span>%
+            </p>
+          </div>
+
+          <div class="bg-white/5 rounded-2xl p-4">
+            <p class="text-xs text-slate-400 mb-1">총 득·실점</p>
+            <p class="text-lg font-extrabold">
+              득점 <span id="pfValue">-</span> · 실점 <span id="paValue">-</span>
+            </p>
+            <p class="text-[11px] text-emerald-300 mt-1">
+              득실차 <span id="diffValue">-</span>
+            </p>
+          </div>
+
+          <div class="bg-white/5 rounded-2xl p-4">
+            <p class="text-xs text-slate-400 mb-1">요약 인사이트</p>
+            <p class="text-[11px] text-slate-200 leading-relaxed" id="summaryText">
+              JSON 데이터를 불러오는 중입니다...
+            </p>
           </div>
         </div>
       </div>
@@ -409,7 +471,11 @@
         },
         options: {
           responsive: true,
-          plugins: { legend: { labels: { color: "#E5E7EB", font: { size: 10 } } } },
+          plugins: {
+            legend: {
+              labels: { color: "#E5E7EB", font: { size: 10 } }
+            }
+          },
           scales: {
             r: {
               angleLines: { color: "rgba(148, 163, 184, 0.4)" },
@@ -452,6 +518,165 @@
         }
       });
     }
+
+    // ✅ 실제 LG 세이커스 정규리그 JSON 데이터를 불러와서 차트 + 요약 카드에 반영
+    fetch("lg_sakers_standings_2024_25.json")
+      .then(res => res.json())
+      .then(data => {
+        console.log("LG Sakers JSON Loaded:", data);
+
+        const lgCtx = document.getElementById("lgChart");
+        if (lgCtx) {
+          new Chart(lgCtx, {
+            type: "bar",
+            data: {
+              labels: ["승", "패", "득점", "실점", "득실차"],
+              datasets: [{
+                label: "2024-25 LG 세이커스 (실제 데이터)",
+                data: [
+                  data.wins,
+                  data.losses,
+                  data.points_for,
+                  data.points_against,
+                  data.point_diff
+                ],
+                backgroundColor: [
+                  "#FFC72C",
+                  "#f97373",
+                  "#60a5fa",
+                  "#a78bfa",
+                  "#34d399"
+                ]
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  labels: {
+                    color: "#E5E7EB",
+                    font: { size: 10 }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  ticks: { color: "#E5E7EB", font: { size: 10 } },
+                  grid: { color: "rgba(148, 163, 184, 0.2)" }
+                },
+                y: {
+                  ticks: { color: "#E5E7EB", font: { size: 10 } },
+                  grid: { color: "rgba(148, 163, 184, 0.2)" }
+                }
+              }
+            }
+          });
+        }
+
+        // 요약 카드 채우기
+        const winsEl = document.getElementById("winsValue");
+        const lossesEl = document.getElementById("lossesValue");
+        const winPctEl = document.getElementById("winPctValue");
+        const pfEl = document.getElementById("pfValue");
+        const paEl = document.getElementById("paValue");
+        const diffEl = document.getElementById("diffValue");
+        const summaryEl = document.getElementById("summaryText");
+
+        if (winsEl && lossesEl && winPctEl && pfEl && paEl && diffEl && summaryEl) {
+          winsEl.textContent = data.wins;
+          lossesEl.textContent = data.losses;
+          winPctEl.textContent = data.win_pct.toFixed(1);
+          pfEl.textContent = data.points_for.toLocaleString();
+          paEl.textContent = data.points_against.toLocaleString();
+          diffEl.textContent = data.point_diff > 0
+            ? `+${data.point_diff}`
+            : data.point_diff;
+
+          const msgParts = [];
+          msgParts.push(`총 ${data.games}경기 ${data.wins}승 ${data.losses}패, 승률 ${data.win_pct.toFixed(1)}%`);
+          if (data.point_diff > 0) {
+            msgParts.push(`득점이 실점보다 ${data.point_diff}점 더 많아 공수 밸런스가 좋습니다.`);
+          } else if (data.point_diff < 0) {
+            msgParts.push(`실점이 득점보다 ${Math.abs(data.point_diff)}점 많아 수비/실책 보완이 필요합니다.`);
+          } else {
+            msgParts.push(`득점과 실점이 같아 접전 경기가 많았던 시즌입니다.`);
+          }
+
+          summaryEl.textContent = msgParts.join(" · ");
+        }
+      })
+      .catch(err => {
+        console.error("JSON 로드 실패 (standings):", err);
+        const summaryEl = document.getElementById("summaryText");
+        if (summaryEl) {
+          summaryEl.textContent = "실제 데이터를 불러오는 데 실패했습니다. 서버/파일 경로를 확인해주세요.";
+        }
+      });
+
+    // ✅ 홈/원정 득점·실점 JSON(lg_home_away_points.json) 불러와서 차트로 표시
+    // JSON 형식 (네가 보낸 그대로):
+    // {
+    //   "home_points_for": 82.4,
+    //   "home_points_against": 76.1,
+    //   "away_points_for": 79.3,
+    //   "away_points_against": 81.0
+    // }
+    fetch("lg_home_away_points.json")
+      .then(res => res.json())
+      .then(data => {
+        console.log("LG Home/Away JSON Loaded:", data);
+
+        const ctx = document.getElementById("lgHomeAwayChart");
+        if (!ctx) return;
+
+        const homeFor = data.home_points_for;
+        const homeAgainst = data.home_points_against;
+        const awayFor = data.away_points_for;
+        const awayAgainst = data.away_points_against;
+
+        new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: ["홈 득점", "홈 실점", "원정 득점", "원정 실점"],
+            datasets: [
+              {
+                label: "평균 점수 (2024-25 실제 데이터)",
+                data: [homeFor, homeAgainst, awayFor, awayAgainst],
+                backgroundColor: [
+                  "#FFC72C",
+                  "#f97373",
+                  "#60a5fa",
+                  "#a78bfa"
+                ]
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                labels: {
+                  color: "#E5E7EB",
+                  font: { size: 10 }
+                }
+              }
+            },
+            scales: {
+              x: {
+                ticks: { color: "#E5E7EB", font: { size: 10 } },
+                grid: { color: "rgba(148, 163, 184, 0.2)" }
+              },
+              y: {
+                ticks: { color: "#E5E7EB", font: { size: 10 } },
+                grid: { color: "rgba(148, 163, 184, 0.2)" }
+              }
+            }
+          }
+        });
+      })
+      .catch(err => {
+        console.error("JSON 로드 실패 (home/away):", err);
+      });
   </script>
 </body>
 </html>
