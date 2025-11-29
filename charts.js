@@ -504,6 +504,56 @@ fetch("lg_crowd_clean.json")
         }
       });
     }
+
+    // 시즌별 주말/주중 평균 관중수 차트
+    const weekendWeekdayCtx = document.getElementById("weekendWeekdayChart");
+    if (weekendWeekdayCtx && data.season_weekend_avg && data.season_weekday_avg) {
+      const seasons = Object.keys(data.season_weekend_avg).sort();
+      const weekendValues = seasons.map(s => data.season_weekend_avg[s]);
+      const weekdayValues = seasons.map(s => data.season_weekday_avg[s]);
+
+      new Chart(weekendWeekdayCtx, {
+        type: "bar",
+        data: {
+          labels: seasons,
+          datasets: [
+            {
+              label: "주말 평균 (토·일)",
+              data: weekendValues,
+              backgroundColor: "#FFC72C",
+              borderColor: "#FFC72C",
+              borderWidth: 1
+            },
+            {
+              label: "주중 평균 (월~금)",
+              data: weekdayValues,
+              backgroundColor: "rgba(255, 199, 44, 0.5)",
+              borderColor: "rgba(255, 199, 44, 0.8)",
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              labels: { color: "#E5E7EB", font: { size: 10 } }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: "#E5E7EB", font: { size: 9 } },
+              grid: { color: "rgba(148, 163, 184, 0.2)" }
+            },
+            y: {
+              ticks: { color: "#E5E7EB", font: { size: 10 } },
+              grid: { color: "rgba(148, 163, 184, 0.2)" },
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
   })
   .catch(err => {
     console.error("JSON 로드 실패 (crowd):", err);

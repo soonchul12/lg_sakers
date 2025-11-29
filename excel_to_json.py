@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+from datetime import datetime
 
 df = pd.read_excel("lg_crowd.xlsx")
 
@@ -56,8 +57,34 @@ df["fixed_date"] = df.apply(fix_date, axis=1)
 # 관중수 숫자만 추출
 df["관중수"] = df["관중수"].astype(str).replace("[^0-9]", "", regex=True).astype(int)
 
+# 날짜를 datetime으로 변환하여 요일 계산
+df["date_obj"] = pd.to_datetime(df["fixed_date"])
+df["요일"] = df["date_obj"].dt.dayofweek  # 0=월요일, 6=일요일
+df["is_weekend"] = df["요일"].isin([5, 6])  # 토요일(5), 일요일(6)
+
 # 시즌별 평균 관중수 계산
 season_avg = df.groupby("시즌")["관중수"].mean().round(0).astype(int).to_dict()
+
+# 시즌별 주말/주중 평균 관중수 계산
+season_weekend_avg = {}
+season_weekday_avg = {}
+
+for season in df["시즌"].unique():
+    season_data = df[df["시즌"] == season]
+    
+    # 주말 평균 (토요일, 일요일)
+    weekend_data = season_data[season_data["is_weekend"] == True]
+    if len(weekend_data) > 0:
+        season_weekend_avg[season] = int(weekend_data["관중수"].mean().round(0))
+    else:
+        season_weekend_avg[season] = 0
+    
+    # 주중 평균 (월요일~금요일)
+    weekday_data = season_data[season_data["is_weekend"] == False]
+    if len(weekday_data) > 0:
+        season_weekday_avg[season] = int(weekday_data["관중수"].mean().round(0))
+    else:
+        season_weekday_avg[season] = 0
 
 # 경기별 데이터 정렬
 df = df.sort_values("fixed_date")
@@ -66,6 +93,8 @@ game_by_game = df[["fixed_date", "관중수"]].rename(columns={"fixed_date": "�
 # JSON 구조 생성
 output = {
     "season_avg": season_avg,
+    "season_weekend_avg": season_weekend_avg,
+    "season_weekday_avg": season_weekday_avg,
     "game_by_game": game_by_game
 }
 
