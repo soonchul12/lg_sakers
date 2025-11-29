@@ -583,3 +583,143 @@ fetch("lg_crowd_clean.json")
     console.error("JSON 로드 실패 (crowd):", err);
   });
 
+// 경쟁사/리그 벤치마킹 차트
+fetch("kbl_benchmark.json")
+  .then(res => res.json())
+  .then(benchmarkData => {
+    // LG 세이커스 데이터도 함께 로드
+    return fetch("lg_crowd_clean.json")
+      .then(res => res.json())
+      .then(lgData => {
+        // LG 세이커스 vs 리그 평균 관중수 비교 차트
+        const lgVsLeagueCtx = document.getElementById("lgVsLeagueChart");
+        if (lgVsLeagueCtx) {
+          const seasons = Object.keys(lgData.season_avg).sort();
+          const lgValues = seasons.map(s => lgData.season_avg[s]);
+          const leagueValues = seasons.map(s => benchmarkData.league_avg_by_season[s] || 0);
+
+          new Chart(lgVsLeagueCtx, {
+            type: "line",
+            data: {
+              labels: seasons,
+              datasets: [
+                {
+                  label: "LG 세이커스",
+                  data: lgValues,
+                  borderColor: "#FFC72C",
+                  backgroundColor: "rgba(255, 199, 44, 0.1)",
+                  tension: 0.3,
+                  pointRadius: 4,
+                  pointHoverRadius: 6
+                },
+                {
+                  label: "KBL 리그 평균",
+                  data: leagueValues,
+                  borderColor: "#94A3B8",
+                  backgroundColor: "rgba(148, 163, 184, 0.1)",
+                  tension: 0.3,
+                  pointRadius: 4,
+                  pointHoverRadius: 6,
+                  borderDash: [5, 5]
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  labels: { color: "#E5E7EB", font: { size: 10 } }
+                },
+                tooltip: {
+                  callbacks: {
+                    afterLabel: function(context) {
+                      const lgValue = lgValues[context.dataIndex];
+                      const leagueValue = leagueValues[context.dataIndex];
+                      const diff = lgValue - leagueValue;
+                      const diffPercent = ((diff / leagueValue) * 100).toFixed(1);
+                      return `차이: ${diff > 0 ? '+' : ''}${diff.toLocaleString()}명 (${diffPercent}%)`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  ticks: { color: "#E5E7EB", font: { size: 9 } },
+                  grid: { color: "rgba(148, 163, 184, 0.2)" }
+                },
+                y: {
+                  ticks: { color: "#E5E7EB", font: { size: 10 } },
+                  grid: { color: "rgba(148, 163, 184, 0.2)" },
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+        }
+
+        // 2024-2025 시즌 구단별 관중수 랭킹 차트
+        const teamRankingCtx = document.getElementById("teamRankingChart");
+        if (teamRankingCtx) {
+          const teams = benchmarkData.team_ranking_2024_2025.map(t => t.team);
+          const attendances = benchmarkData.team_ranking_2024_2025.map(t => t.avg_attendance);
+          
+          // LG 세이커스 강조를 위한 색상 배열
+          const colors = teams.map((team, index) => 
+            team === "창원 LG" ? "#FFC72C" : 
+            index < 3 ? "#60A5FA" : "#94A3B8"
+          );
+
+          new Chart(teamRankingCtx, {
+            type: "bar",
+            data: {
+              labels: teams,
+              datasets: [{
+                label: "평균 관중수",
+                data: attendances,
+                backgroundColor: colors,
+                borderColor: colors,
+                borderWidth: 1
+              }]
+            },
+            options: {
+              indexAxis: 'y',
+              responsive: true,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  callbacks: {
+                    afterLabel: function(context) {
+                      const team = teams[context.dataIndex];
+                      const lgAttendance = lgData.season_avg["2024-2025"];
+                      const teamAttendance = attendances[context.dataIndex];
+                      if (team !== "창원 LG") {
+                        const diff = teamAttendance - lgAttendance;
+                        return `LG 대비: ${diff > 0 ? '+' : ''}${diff.toLocaleString()}명`;
+                      }
+                      return "";
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  ticks: { color: "#E5E7EB", font: { size: 10 } },
+                  grid: { color: "rgba(148, 163, 184, 0.2)" },
+                  beginAtZero: true
+                },
+                y: {
+                  ticks: { color: "#E5E7EB", font: { size: 10 } },
+                  grid: { display: false }
+                }
+              }
+            }
+          });
+        }
+      });
+  })
+  .catch(err => {
+    console.error("JSON 로드 실패 (benchmark):", err);
+  });
+

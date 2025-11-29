@@ -35,6 +35,7 @@
           <a href="#intro" class="hover:text-white">Intro</a>
           <a href="#dashboard" class="hover:text-white">Data</a>
           <a href="#realdata" class="hover:text-white">Real Data</a>
+          <a href="#benchmark" class="hover:text-white">Benchmark</a>
           <a href="#sns" class="hover:text-white">SNS</a>
           <a href="#goods" class="hover:text-white">Goods</a>
           <a href="#ux" class="hover:text-white">Fan UX</a>
@@ -205,6 +206,119 @@
             <p class="text-[11px] text-slate-200 leading-relaxed" id="summaryText">
               JSON 데이터를 불러오는 중입니다...
             </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 경쟁사/리그 벤치마킹 분석 섹션 -->
+    <section id="benchmark" class="border-t border-white/10 bg-black/30">
+      <div class="max-w-6xl mx-auto px-4 py-16">
+        <div class="flex items-center gap-3 mb-3">
+          <h2 class="section-title mb-0">
+            KBL 리그 <span class="accent">벤치마킹</span> 분석
+          </h2>
+          <span class="px-3 py-1 rounded-full border border-emerald-400/60 text-xs text-emerald-300 bg-emerald-400/10">
+            실제 데이터
+          </span>
+        </div>
+        <p class="text-sm md:text-base text-slate-200 mb-8 max-w-3xl">
+          KBL 리그 평균 관중수와 타 구단 대비 LG 세이커스의 위치를 분석하고,
+          관중수 상위 구단의 성공 전략을 벤치마킹하여 마케팅 인사이트를 도출합니다.
+        </p>
+
+        <!-- LG 세이커스 vs 리그 평균 관중수 비교 -->
+        <div class="mb-10">
+          <h3 class="font-semibold mb-3 text-sm">LG 세이커스 vs KBL 리그 평균 관중수 비교</h3>
+          <canvas id="lgVsLeagueChart" height="180"></canvas>
+        </div>
+
+        <!-- 2024-2025 시즌 구단별 관중수 랭킹 -->
+        <div class="mb-10">
+          <h3 class="font-semibold mb-3 text-sm">2024-2025 시즌 구단별 평균 관중수 랭킹</h3>
+          <canvas id="teamRankingChart" height="200"></canvas>
+        </div>
+
+        <!-- 상위 구단 성공 전략 분석 -->
+        <div class="grid md:grid-cols-3 gap-6">
+          <div class="bg-white/5 rounded-3xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+              <h4 class="font-semibold text-sm">서울 SK</h4>
+              <span class="text-xs text-slate-400">1위 (4,586명)</span>
+            </div>
+            <p class="text-xs text-yellow-300 mb-2">대도시 위치 + 스타 플레이어 마케팅</p>
+            <ul class="text-xs text-slate-300 space-y-1 list-disc list-inside">
+              <li>서울 강남 지역 접근성 우수</li>
+              <li>김선형 등 스타 플레이어 중심 마케팅</li>
+              <li>프리미엄 좌석 패키지 운영</li>
+            </ul>
+          </div>
+
+          <div class="bg-white/5 rounded-3xl p-5 border-2 border-yellow-400/30">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+              <h4 class="font-semibold text-sm">창원 LG</h4>
+              <span class="text-xs text-yellow-300 font-semibold">2위 (3,422명)</span>
+            </div>
+            <p class="text-xs text-yellow-300 mb-2">리그 평균 대비 +21.3% 우수한 성과</p>
+            <ul class="text-xs text-slate-300 space-y-1 list-disc list-inside">
+              <li>주말 관중수 주중 대비 1,300명 이상 높음</li>
+              <li>창원 지역 팬 기반 안정적</li>
+              <li>지속적인 관중수 증가 추세</li>
+            </ul>
+          </div>
+
+          <div class="bg-white/5 rounded-3xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+              <h4 class="font-semibold text-sm">부산 KCC</h4>
+              <span class="text-xs text-slate-400">3위 (3,274명)</span>
+            </div>
+            <p class="text-xs text-yellow-300 mb-2">지역 연고 강화 + 가족 단위 마케팅</p>
+            <ul class="text-xs text-slate-300 space-y-1 list-disc list-inside">
+              <li>부산 지역 팬 커뮤니티 활성화</li>
+              <li>가족 단위 할인 티켓 패키지</li>
+              <li>지역 기업 협업 프로모션</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- LG 세이커스 인사이트 요약 -->
+        <div class="mt-10 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-400/30 rounded-3xl p-6">
+          <h3 class="font-semibold mb-3 text-sm flex items-center gap-2">
+            <span class="text-yellow-300">💡</span>
+            LG 세이커스 데이터 인사이트 요약
+          </h3>
+          <div class="grid md:grid-cols-2 gap-4 text-xs text-slate-200">
+            <div>
+              <p class="font-semibold mb-2 text-yellow-300">📊 현재 위치</p>
+              <p class="leading-relaxed">
+                <strong>리그 2위</strong> (3,422명)로 리그 평균(2,822명) 대비 <strong>+21.3%</strong> 우수한 성과를 보이고 있습니다. 
+                서울 SK(1위, 4,586명)와의 격차는 1,164명입니다.
+              </p>
+            </div>
+            <div>
+              <p class="font-semibold mb-2 text-yellow-300">📈 주말/주중 분석</p>
+              <p class="leading-relaxed">
+                주말 평균 관중수(4,193명)가 주중(2,892명) 대비 <strong>+45%</strong> 높아, 
+                주말 경기 마케팅 집중 전략이 효과적입니다.
+              </p>
+            </div>
+            <div>
+              <p class="font-semibold mb-2 text-yellow-300">🎯 1위 서울 SK 벤치마킹</p>
+              <p class="leading-relaxed">
+                서울 SK의 대도시 접근성과 스타 플레이어 마케팅 전략을 참고하여, 
+                창원 지역 특화 + 스타 플레이어 중심 마케팅 강화 필요
+              </p>
+            </div>
+            <div>
+              <p class="font-semibold mb-2 text-yellow-300">🚀 개선 기회</p>
+              <p class="leading-relaxed">
+                주중 관중수 향상을 위해 평일 타깃 프로모션(20~30대 직장인, 가족 단위 패키지) 및 
+                지역 기업 협업 프로그램 확대 제안
+              </p>
+            </div>
           </div>
         </div>
       </div>
