@@ -226,17 +226,58 @@ fetch("lg_sakers_standings_2024_25.json")
         ? `+${data.point_diff}`
         : data.point_diff;
 
-      const msgParts = [];
-      msgParts.push(`총 ${data.games}경기 ${data.wins}승 ${data.losses}패, 승률 ${data.win_pct.toFixed(1)}%`);
-      if (data.point_diff > 0) {
-        msgParts.push(`득점이 실점보다 ${data.point_diff}점 더 많아 공수 밸런스가 좋습니다.`);
-      } else if (data.point_diff < 0) {
-        msgParts.push(`실점이 득점보다 ${Math.abs(data.point_diff)}점 많아 수비/실책 보완이 필요합니다.`);
-      } else {
-        msgParts.push(`득점과 실점이 같아 접전 경기가 많았던 시즌입니다.`);
-      }
+      // 관중수 데이터도 함께 가져와서 요약에 포함
+      fetch("lg_crowd_clean.json")
+        .then(res => res.json())
+        .then(crowdData => {
+          // 시즌 형식 변환: "2024-25" -> "2024-2025"
+          let seasonKey = data.season || "2024-2025";
+          if (seasonKey.includes("-") && seasonKey.split("-")[1].length === 2) {
+            const [start, end] = seasonKey.split("-");
+            seasonKey = `${start}-20${end}`;
+          }
+          
+          const seasonAvg = crowdData.season_avg[seasonKey];
+          
+          // 전체 평균 관중수 계산
+          const allAvgValues = Object.values(crowdData.season_avg);
+          const overallAvg = Math.round(allAvgValues.reduce((a, b) => a + b, 0) / allAvgValues.length);
 
-      summaryEl.textContent = msgParts.join(" · ");
+          const msgParts = [];
+          msgParts.push(`총 ${data.games}경기 ${data.wins}승 ${data.losses}패, 승률 ${data.win_pct.toFixed(1)}%`);
+          
+          if (data.point_diff > 0) {
+            msgParts.push(`득점이 실점보다 ${data.point_diff}점 더 많아 공수 밸런스가 좋습니다.`);
+          } else if (data.point_diff < 0) {
+            msgParts.push(`실점이 득점보다 ${Math.abs(data.point_diff)}점 많아 수비/실책 보완이 필요합니다.`);
+          } else {
+            msgParts.push(`득점과 실점이 같아 접전 경기가 많았던 시즌입니다.`);
+          }
+
+          // 관중수 정보 추가
+          if (seasonAvg) {
+            const diffPercent = ((seasonAvg - overallAvg) / overallAvg * 100).toFixed(1);
+            msgParts.push(`${data.season || seasonKey} 시즌 평균 관중수는 ${seasonAvg.toLocaleString()}명으로, 전체 평균(${overallAvg.toLocaleString()}명) 대비 ${seasonAvg >= overallAvg ? diffPercent + '% 높은' : Math.abs(diffPercent) + '% 낮은'} 수준입니다.`);
+          } else {
+            msgParts.push(`전체 시즌 평균 관중수는 ${overallAvg.toLocaleString()}명입니다.`);
+          }
+
+          summaryEl.textContent = msgParts.join(" · ");
+        })
+        .catch(err => {
+          console.error("관중수 데이터 로드 실패:", err);
+          // 관중수 없이 기본 요약만 표시
+          const msgParts = [];
+          msgParts.push(`총 ${data.games}경기 ${data.wins}승 ${data.losses}패, 승률 ${data.win_pct.toFixed(1)}%`);
+          if (data.point_diff > 0) {
+            msgParts.push(`득점이 실점보다 ${data.point_diff}점 더 많아 공수 밸런스가 좋습니다.`);
+          } else if (data.point_diff < 0) {
+            msgParts.push(`실점이 득점보다 ${Math.abs(data.point_diff)}점 많아 수비/실책 보완이 필요합니다.`);
+          } else {
+            msgParts.push(`득점과 실점이 같아 접전 경기가 많았던 시즌입니다.`);
+          }
+          summaryEl.textContent = msgParts.join(" · ");
+        });
     }
   })
   .catch(err => {
