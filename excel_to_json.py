@@ -10,20 +10,45 @@ def get_start_year(season_str):
     except:
         return 2025  # 혹시 오류 나면 기본값
 
-# 날짜 변환: "10.03" → "2025-10-03"
+# 날짜 변환: "10.03" → "2025-10-03", "1.01" → "2025-01-01" (시즌 종료 연도)
+# 시즌은 10월에 시작해서 다음 해 4월에 끝남 (예: 2024-2025 시즌 = 2024년 10월 ~ 2025년 4월)
 def fix_date(row):
-    raw_date = str(row["날짜"]).strip()
+    raw_date = row["날짜"]
     season = str(row["시즌"])
-    year = get_start_year(season)
+    start_year = get_start_year(season)
 
-    # 월, 일 나누기
+    # 엑셀에서 float로 읽힌 경우 처리 (예: 12.2 → "12.20", 1.3 → "1.30")
     try:
-        m, d = raw_date.split(".")
-        m = m.zfill(2)
-        d = d.zfill(2)
+        if isinstance(raw_date, float):
+            # float를 문자열로 변환 (소수점 둘째 자리까지, 반올림)
+            date_str = f"{raw_date:.2f}"
+            # 정수 부분과 소수 부분 분리
+            parts = date_str.split(".")
+            m = int(parts[0])
+            # 소수 부분을 일자로 변환 (0.29 → 29)
+            decimal_part = float("0." + parts[1])
+            d = round(decimal_part * 100)  # 반올림으로 정밀도 문제 해결
+        else:
+            # 문자열인 경우
+            date_str = str(raw_date).strip()
+            m, d = date_str.split(".")
+            m = int(m)
+            d = int(d)
+        
+        m_int = m
+        m = str(m).zfill(2)
+        d = str(d).zfill(2)
+        
+        # 1월~4월은 시즌 종료 연도(시작 연도 + 1), 10월~12월은 시즌 시작 연도
+        if 1 <= m_int <= 4:
+            year = start_year + 1  # 다음 해 (예: 2024-2025 시즌의 1월 = 2025년)
+        else:
+            year = start_year  # 같은 해 (예: 2024-2025 시즌의 10월 = 2024년)
+        
         return f"{year}-{m}-{d}"
-    except:
-        return f"{year}-01-01"  # 에러 발생 시 임시 날짜
+    except Exception as e:
+        print(f"날짜 변환 오류: {raw_date}, {e}")
+        return f"{start_year}-01-01"  # 에러 발생 시 임시 날짜
 
 # 날짜 변환 적용
 df["fixed_date"] = df.apply(fix_date, axis=1)
