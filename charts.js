@@ -427,6 +427,15 @@ fetch("lg_crowd_clean.json")
       
       const labels = sortedData.map(r => r.날짜);
       const values = sortedData.map(r => r.관중수);
+      
+      // 주중/주말에 따라 포인트 색상 구분
+      // 주말(토·일): 밝은 노란색, 주중(월~금): 회색 계열로 명확히 구분
+      const pointBackgroundColors = sortedData.map(r => 
+        r.is_weekend ? "#FFC72C" : "#94A3B8"  // 주말: 노란색, 주중: 회색
+      );
+      const pointBorderColors = sortedData.map(r => 
+        r.is_weekend ? "#FFC72C" : "#64748B"  // 주말: 노란색, 주중: 진한 회색
+      );
 
       // 버튼 상태 업데이트
       if (prevBtn) {
@@ -440,6 +449,8 @@ fetch("lg_crowd_clean.json")
       if (crowdChart) {
         crowdChart.data.labels = labels;
         crowdChart.data.datasets[0].data = values;
+        crowdChart.data.datasets[0].pointBackgroundColor = pointBackgroundColors;
+        crowdChart.data.datasets[0].pointBorderColor = pointBorderColors;
         crowdChart.update();
       } else {
         crowdChart = new Chart(crowdCtx, {
@@ -452,15 +463,28 @@ fetch("lg_crowd_clean.json")
               borderColor: "#FFC72C",
               backgroundColor: "rgba(255, 199, 44, 0.3)",
               tension: 0.3,
-              pointRadius: 4,
-              pointHoverRadius: 6
+              pointRadius: 6,
+              pointHoverRadius: 8,
+              pointBackgroundColor: pointBackgroundColors,
+              pointBorderColor: pointBorderColors,
+              pointBorderWidth: 2
             }]
           },
           options: {
             responsive: true,
             plugins: {
               legend: {
-                labels: { color: "#E5E7EB", font: { size: 10 } }
+                labels: { color: "#E5E7EB", font: { size: 10 } },
+                display: true
+              },
+              tooltip: {
+                callbacks: {
+                  afterLabel: function(context) {
+                    const dataIndex = context.dataIndex;
+                    const isWeekend = sortedData[dataIndex].is_weekend;
+                    return isWeekend ? "주말 (토·일)" : "주중 (월~금)";
+                  }
+                }
               }
             },
             scales: {

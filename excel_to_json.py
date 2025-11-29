@@ -88,7 +88,8 @@ for season in df["시즌"].unique():
 
 # 경기별 데이터 정렬
 df = df.sort_values("fixed_date")
-game_by_game = df[["fixed_date", "관중수"]].rename(columns={"fixed_date": "날짜"}).to_dict(orient="records")
+# 요일 정보 포함하여 경기별 데이터 생성
+game_by_game = df[["fixed_date", "관중수", "is_weekend"]].rename(columns={"fixed_date": "날짜"}).to_dict(orient="records")
 
 # JSON 구조 생성
 output = {
