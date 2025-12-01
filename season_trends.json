@@ -1,0 +1,199 @@
+{
+  "season_trends": {
+    "2010-2011": {
+      "early_avg": 4512,
+      "mid_avg": 4571,
+      "late_avg": 4854,
+      "total_avg": 4646,
+      "total_games": 27
+    },
+    "2011-2012": {
+      "early_avg": 4444,
+      "mid_avg": 4932,
+      "late_avg": 4997,
+      "total_avg": 4791,
+      "total_games": 27
+    },
+    "2012-2013": {
+      "early_avg": 4528,
+      "mid_avg": 4713,
+      "late_avg": 3778,
+      "total_avg": 4340,
+      "total_games": 27
+    },
+    "2013-2014": {
+      "early_avg": 4932,
+      "mid_avg": 5973,
+      "late_avg": 5503,
+      "total_avg": 5470,
+      "total_games": 27
+    },
+    "2014-2015": {
+      "early_avg": 3364,
+      "mid_avg": 3650,
+      "late_avg": 4770,
+      "total_avg": 3928,
+      "total_games": 27
+    },
+    "2015-2016": {
+      "early_avg": 3284,
+      "mid_avg": 3835,
+      "late_avg": 4972,
+      "total_avg": 3820,
+      "total_games": 22
+    },
+    "2016-2017": {
+      "early_avg": 3890,
+      "mid_avg": 3802,
+      "late_avg": 3444,
+      "total_avg": 3712,
+      "total_games": 27
+    },
+    "2017-2018": {
+      "early_avg": 3300,
+      "mid_avg": 3352,
+      "late_avg": 2823,
+      "total_avg": 3159,
+      "total_games": 27
+    },
+    "2018-2019": {
+      "early_avg": 3624,
+      "mid_avg": 4230,
+      "late_avg": 4130,
+      "total_avg": 3995,
+      "total_games": 27
+    },
+    "2019-2020": {
+      "early_avg": 3514,
+      "mid_avg": 3939,
+      "late_avg": 3458,
+      "total_avg": 3637,
+      "total_games": 21
+    },
+    "2020-2021": {
+      "early_avg": 457,
+      "mid_avg": 364,
+      "late_avg": 580,
+      "total_avg": 472,
+      "total_games": 25
+    },
+    "2021-2022": {
+      "early_avg": 750,
+      "mid_avg": 1410,
+      "late_avg": 834,
+      "total_avg": 1008,
+      "total_games": 26
+    },
+    "2022-2023": {
+      "early_avg": 1813,
+      "mid_avg": 2276,
+      "late_avg": 2825,
+      "total_avg": 2305,
+      "total_games": 27
+    },
+    "2023-2024": {
+      "early_avg": 2873,
+      "mid_avg": 4130,
+      "late_avg": 3712,
+      "total_avg": 3572,
+      "total_games": 27
+    },
+    "2024-2025": {
+      "early_avg": 2949,
+      "mid_avg": 3812,
+      "late_avg": 3505,
+      "total_avg": 3422,
+      "total_games": 27
+    }
+  },
+  "monthly_avg_2024_2025": {
+    "2024-10": 2920,
+    "2024-11": 2908,
+    "2024-12": 3709,
+    "2025-01": 3652,
+    "2025-02": 3179,
+    "2025-03": 3688,
+    "2025-04": 3063
+  },
+  "special_events_2024_2025": [
+    {
+      "date": "2024-12-28",
+      "attendance": 4950,
+      "is_weekend": true
+    },
+    {
+      "date": "2025-01-30",
+      "attendance": 4950,
+      "is_weekend": false
+    },
+    {
+      "date": "2024-10-19",
+      "attendance": 4757,
+      "is_weekend": true
+    },
+    {
+      "date": "2025-03-01",
+      "attendance": 4697,
+      "is_weekend": true
+    },
+    {
+      "date": "2025-01-01",
+      "attendance": 4363,
+      "is_weekend": false
+    },
+    {
+      "date": "2024-12-29",
+      "attendance": 4314,
+      "is_weekend": true
+    },
+    {
+      "date": "2025-01-25",
+      "attendance": 4156,
+      "is_weekend": true
+    },
+    {
+      "date": "2025-03-23",
+      "attendance": 4153,
+      "is_weekend": true
+    }
+  ],
+  "standings_2024_2025": {
+    "season": "2024-25",
+    "position": 2,
+    "team": "Changwon LG Sakers",
+    "games": 54,
+    "wins": 34,
+    "losses": 20,
+    "win_pct": 62.9,
+    "points_for": 4170,
+    "points_against": 3977,
+    "point_diff": 193,
+    "source": "https://es.wikipedia.org/wiki/Liga_de_baloncesto_de_Corea_2024-25"
+  },
+  "round_avg_2024_2025": {
+    "1라운드": {
+      "avg_attendance": 3113,
+      "game_count": 5
+    },
+    "2라운드": {
+      "avg_attendance": 2744,
+      "game_count": 4
+    },
+    "3라운드": {
+      "avg_attendance": 4138,
+      "game_count": 5
+    },
+    "4라운드": {
+      "avg_attendance": 3353,
+      "game_count": 5
+    },
+    "5라운드": {
+      "avg_attendance": 3659,
+      "game_count": 4
+    },
+    "6라운드": {
+      "avg_attendance": 3442,
+      "game_count": 4
+    }
+  }
+}

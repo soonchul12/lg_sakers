@@ -723,3 +723,150 @@ fetch("kbl_benchmark.json")
     console.error("JSON 로드 실패 (benchmark):", err);
   });
 
+// 시즌별 트렌드 & 인사이트 차트
+fetch("season_trends.json")
+  .then(res => res.json())
+  .then(trendData => {
+    // 라운드별 관중수 패턴 차트 (2024-2025 시즌)
+    const roundCtx = document.getElementById("roundChart");
+    if (roundCtx && trendData.round_avg_2024_2025) {
+      const rounds = Object.keys(trendData.round_avg_2024_2025).sort();
+      const roundLabels = rounds.map(r => r.replace('라운드', 'R'));
+      const values = rounds.map(r => trendData.round_avg_2024_2025[r].avg_attendance);
+      const gameCounts = rounds.map(r => trendData.round_avg_2024_2025[r].game_count);
+      
+      // 시즌 평균 계산
+      const seasonAvg = trendData.season_trends["2024-2025"].total_avg;
+      
+      // 최고 관중수 라운드 강조를 위한 색상
+      const maxValue = Math.max(...values);
+      const colors = values.map(v => v === maxValue ? "#FFC72C" : "#94A3B8");
+      const borderColors = values.map(v => v === maxValue ? "#FFC72C" : "#64748B");
+
+      new Chart(roundCtx, {
+        type: "bar",
+        data: {
+          labels: roundLabels,
+          datasets: [{
+            label: "평균 관중수",
+            data: values,
+            backgroundColor: colors,
+            borderColor: borderColors,
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                title: function(context) {
+                  return `${rounds[context[0].dataIndex]} (${gameCounts[context[0].dataIndex]}경기)`;
+                },
+                afterLabel: function(context) {
+                  const avg = seasonAvg;
+                  const diff = values[context.dataIndex] - avg;
+                  const diffPercent = ((diff / avg) * 100).toFixed(1);
+                  return `시즌 평균 대비: ${diff > 0 ? '+' : ''}${diff.toLocaleString()}명 (${diffPercent}%)`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: "#E5E7EB", font: { size: 10 } },
+              grid: { color: "rgba(148, 163, 184, 0.2)" }
+            },
+            y: {
+              ticks: { color: "#E5E7EB", font: { size: 10 } },
+              grid: { color: "rgba(148, 163, 184, 0.2)" },
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // 월별 관중수 트렌드 차트
+    const monthlyTrendCtx = document.getElementById("monthlyTrendChart");
+    if (monthlyTrendCtx && trendData.monthly_avg_2024_2025) {
+      const months = Object.keys(trendData.monthly_avg_2024_2025).sort();
+      const monthLabels = months.map(m => {
+        const [year, month] = m.split('-');
+        const monthNames = ['', '1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+        return `${year}년 ${monthNames[parseInt(month)]}`;
+      });
+      const values = months.map(m => trendData.monthly_avg_2024_2025[m]);
+
+      new Chart(monthlyTrendCtx, {
+        type: "line",
+        data: {
+          labels: monthLabels,
+          datasets: [{
+            label: "월별 평균 관중수",
+            data: values,
+            borderColor: "#FFC72C",
+            backgroundColor: "rgba(255, 199, 44, 0.1)",
+            tension: 0.3,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              labels: { color: "#E5E7EB", font: { size: 10 } }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: "#E5E7EB", font: { size: 9 } },
+              grid: { color: "rgba(148, 163, 184, 0.2)" }
+            },
+            y: {
+              ticks: { color: "#E5E7EB", font: { size: 10 } },
+              grid: { color: "rgba(148, 163, 184, 0.2)" },
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // 특별 이벤트 목록 표시
+    const specialEventsList = document.getElementById("specialEventsList");
+    if (specialEventsList && trendData.special_events_2024_2025) {
+      const events = trendData.special_events_2024_2025;
+      const seasonAvg = trendData.season_trends["2024-2025"].total_avg;
+      
+      events.forEach((event, index) => {
+        const date = new Date(event.date);
+        const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
+        const diff = event.attendance - seasonAvg;
+        const diffPercent = ((diff / seasonAvg) * 100).toFixed(1);
+        
+        const eventDiv = document.createElement("div");
+        eventDiv.className = "flex items-center justify-between p-2 bg-white/5 rounded-lg";
+        eventDiv.innerHTML = `
+          <div>
+            <span class="text-yellow-300 font-semibold">${dateStr}</span>
+            <span class="text-slate-400 ml-2">${event.is_weekend ? '주말' : '주중'}</span>
+          </div>
+          <div class="text-right">
+            <div class="text-white font-semibold">${event.attendance.toLocaleString()}명</div>
+            <div class="text-emerald-400 text-[10px]">+${diffPercent}%</div>
+          </div>
+        `;
+        specialEventsList.appendChild(eventDiv);
+      });
+    }
+  })
+  .catch(err => {
+    console.error("JSON 로드 실패 (trends):", err);
+  });
+
