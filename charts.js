@@ -628,7 +628,7 @@ fetch("season_trends.json")
       fetch("lg_crowd_clean.json")
         .then(res => res.json())
         .then(lgData => {
-          const weekdayAvg = lgData.season_weekday_avg["2024-2025"];
+          const weekdayAvg = lgData.season_weekday_avg["2025-2026"];
           const eventAttendance = 2984; // 2025-12-04 목요일 이벤트 관중수
           const diff = eventAttendance - weekdayAvg;
           const diffPercent = ((diff / weekdayAvg) * 100).toFixed(1);
@@ -636,7 +636,7 @@ fetch("season_trends.json")
           new Chart(weekdayEventCtx, {
             type: "bar",
             data: {
-              labels: ["평일 평균 관중수", "이벤트 날 관중수\n(2025-12-04 목)"],
+              labels: ["2025-2026 시즌\n평일 평균 관중수", "이벤트 날 관중수\n(2025-12-04 목)"],
               datasets: [{
                 label: "관중수",
                 data: [weekdayAvg, eventAttendance],
