@@ -21,73 +21,27 @@ const commonOptions = {
   }
 };
 
-// Hero 미니 승률 차트 (샘플)
-const heroCtx = document.getElementById("heroWinRateChart");
-if (heroCtx) {
-  new Chart(heroCtx, {
-    type: "line",
-    data: {
-      labels: ["2019-20", "20-21", "21-22", "22-23", "23-24", "24-25"],
-      datasets: [{
-        label: "승률(샘플)",
-        data: [0.38, 0.45, 0.44, 0.67, 0.67, 0.63],
-        borderColor: "#FFC72C",
-        tension: 0.3
-      }]
-    },
-    options: {
-      ...commonOptions,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { display: false },
-        y: { display: false }
-      }
+// Hero 섹션 관중수 데이터 표시
+fetch("lg_crowd_clean.json")
+  .then(res => res.json())
+  .then(data => {
+    const seasonAvgEl = document.getElementById("heroSeasonAvg");
+    const weekendAvgEl = document.getElementById("heroWeekendAvg");
+    const weekdayAvgEl = document.getElementById("heroWeekdayAvg");
+    
+    if (seasonAvgEl && data.season_avg["2024-2025"]) {
+      seasonAvgEl.textContent = data.season_avg["2024-2025"].toLocaleString();
     }
+    if (weekendAvgEl && data.season_weekend_avg["2024-2025"]) {
+      weekendAvgEl.textContent = data.season_weekend_avg["2024-2025"].toLocaleString();
+    }
+    if (weekdayAvgEl && data.season_weekday_avg["2024-2025"]) {
+      weekdayAvgEl.textContent = data.season_weekday_avg["2024-2025"].toLocaleString();
+    }
+  })
+  .catch(err => {
+    console.error("JSON 로드 실패 (hero):", err);
   });
-}
-
-// 시즌 승률 차트 (샘플)
-const seasonCtx = document.getElementById("seasonWinRateChart");
-if (seasonCtx) {
-  new Chart(seasonCtx, {
-    type: "bar",
-    data: {
-      labels: ["20-21", "21-22", "22-23", "23-24", "24-25"],
-      datasets: [{
-        label: "승률(샘플)",
-        data: [0.35, 0.44, 0.67, 0.67, 0.63],
-        backgroundColor: "rgba(248, 250, 252, 0.7)"
-      }]
-    },
-    options: commonOptions
-  });
-}
-
-// 홈 경기 득점/실점 차트 (샘플)
-const homeCtx = document.getElementById("homePtsChart");
-if (homeCtx) {
-  new Chart(homeCtx, {
-    type: "line",
-    data: {
-      labels: ["1R", "2R", "3R", "4R", "5R"],
-      datasets: [
-        {
-          label: "득점",
-          data: [80, 84, 83, 81, 83],
-          borderColor: "#FFC72C",
-          tension: 0.3
-        },
-        {
-          label: "실점",
-          data: [78, 77, 76, 75, 77],
-          borderColor: "#f97373",
-          tension: 0.3
-        }
-      ]
-    },
-    options: commonOptions
-  });
-}
 
 // SNS 타입별 참여율 (샘플)
 const snsCtx = document.getElementById("snsTypeChart");
@@ -153,205 +107,6 @@ if (goodsCtx) {
   });
 }
 
-// ✅ 실제 LG 세이커스 정규리그 JSON 데이터를 불러와서 차트 + 요약 카드에 반영
-fetch("lg_sakers_standings_2024_25.json")
-  .then(res => res.json())
-  .then(data => {
-    console.log("LG Sakers JSON Loaded:", data);
-
-    const lgCtx = document.getElementById("lgChart");
-    if (lgCtx) {
-      new Chart(lgCtx, {
-        type: "bar",
-        data: {
-          labels: ["승", "패", "득점", "실점", "득실차"],
-          datasets: [{
-            label: "2024-25 LG 세이커스 (실제 데이터)",
-            data: [
-              data.wins,
-              data.losses,
-              data.points_for,
-              data.points_against,
-              data.point_diff
-            ],
-            backgroundColor: [
-              "#FFC72C",
-              "#f97373",
-              "#60a5fa",
-              "#a78bfa",
-              "#34d399"
-            ]
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              labels: {
-                color: "#E5E7EB",
-                font: { size: 10 }
-              }
-            }
-          },
-          scales: {
-            x: {
-              ticks: { color: "#E5E7EB", font: { size: 10 } },
-              grid: { color: "rgba(148, 163, 184, 0.2)" }
-            },
-            y: {
-              ticks: { color: "#E5E7EB", font: { size: 10 } },
-              grid: { color: "rgba(148, 163, 184, 0.2)" }
-            }
-          }
-        }
-      });
-    }
-
-    // 요약 카드 채우기
-    const winsEl = document.getElementById("winsValue");
-    const lossesEl = document.getElementById("lossesValue");
-    const winPctEl = document.getElementById("winPctValue");
-    const pfEl = document.getElementById("pfValue");
-    const paEl = document.getElementById("paValue");
-    const diffEl = document.getElementById("diffValue");
-    const summaryEl = document.getElementById("summaryText");
-
-    if (winsEl && lossesEl && winPctEl && pfEl && paEl && diffEl && summaryEl) {
-      winsEl.textContent = data.wins;
-      lossesEl.textContent = data.losses;
-      winPctEl.textContent = data.win_pct.toFixed(1);
-      pfEl.textContent = data.points_for.toLocaleString();
-      paEl.textContent = data.points_against.toLocaleString();
-      diffEl.textContent = data.point_diff > 0
-        ? `+${data.point_diff}`
-        : data.point_diff;
-
-      // 관중수 데이터도 함께 가져와서 요약에 포함
-      fetch("lg_crowd_clean.json")
-        .then(res => res.json())
-        .then(crowdData => {
-          // 시즌 형식 변환: "2024-25" -> "2024-2025"
-          let seasonKey = data.season || "2024-2025";
-          if (seasonKey.includes("-") && seasonKey.split("-")[1].length === 2) {
-            const [start, end] = seasonKey.split("-");
-            seasonKey = `${start}-20${end}`;
-          }
-          
-          const seasonAvg = crowdData.season_avg[seasonKey];
-          
-          // 전체 평균 관중수 계산
-          const allAvgValues = Object.values(crowdData.season_avg);
-          const overallAvg = Math.round(allAvgValues.reduce((a, b) => a + b, 0) / allAvgValues.length);
-
-          const msgParts = [];
-          msgParts.push(`총 ${data.games}경기 ${data.wins}승 ${data.losses}패, 승률 ${data.win_pct.toFixed(1)}%`);
-          
-          if (data.point_diff > 0) {
-            msgParts.push(`득점이 실점보다 ${data.point_diff}점 더 많아 공수 밸런스가 좋습니다.`);
-          } else if (data.point_diff < 0) {
-            msgParts.push(`실점이 득점보다 ${Math.abs(data.point_diff)}점 많아 수비/실책 보완이 필요합니다.`);
-          } else {
-            msgParts.push(`득점과 실점이 같아 접전 경기가 많았던 시즌입니다.`);
-          }
-
-          // 관중수 정보 추가
-          if (seasonAvg) {
-            const diffPercent = ((seasonAvg - overallAvg) / overallAvg * 100).toFixed(1);
-            msgParts.push(`${data.season || seasonKey} 시즌 평균 관중수는 ${seasonAvg.toLocaleString()}명으로, 전체 평균(${overallAvg.toLocaleString()}명) 대비 ${seasonAvg >= overallAvg ? diffPercent + '% 높은' : Math.abs(diffPercent) + '% 낮은'} 수준입니다.`);
-          } else {
-            msgParts.push(`전체 시즌 평균 관중수는 ${overallAvg.toLocaleString()}명입니다.`);
-          }
-
-          summaryEl.textContent = msgParts.join(" · ");
-        })
-        .catch(err => {
-          console.error("관중수 데이터 로드 실패:", err);
-          // 관중수 없이 기본 요약만 표시
-          const msgParts = [];
-          msgParts.push(`총 ${data.games}경기 ${data.wins}승 ${data.losses}패, 승률 ${data.win_pct.toFixed(1)}%`);
-          if (data.point_diff > 0) {
-            msgParts.push(`득점이 실점보다 ${data.point_diff}점 더 많아 공수 밸런스가 좋습니다.`);
-          } else if (data.point_diff < 0) {
-            msgParts.push(`실점이 득점보다 ${Math.abs(data.point_diff)}점 많아 수비/실책 보완이 필요합니다.`);
-          } else {
-            msgParts.push(`득점과 실점이 같아 접전 경기가 많았던 시즌입니다.`);
-          }
-          summaryEl.textContent = msgParts.join(" · ");
-        });
-    }
-  })
-  .catch(err => {
-    console.error("JSON 로드 실패 (standings):", err);
-    const summaryEl = document.getElementById("summaryText");
-    if (summaryEl) {
-      summaryEl.textContent = "실제 데이터를 불러오는 데 실패했습니다. 서버/파일 경로를 확인해주세요.";
-    }
-  });
-
-// ✅ 홈/원정 득점·실점 JSON(lg_home_away_points.json) 불러와서 차트로 표시
-// JSON 형식 (네가 보낸 그대로):
-// {
-//   "home_points_for": 82.4,
-//   "home_points_against": 76.1,
-//   "away_points_for": 79.3,
-//   "away_points_against": 81.0
-// }
-fetch("lg_home_away_points.json")
-  .then(res => res.json())
-  .then(data => {
-    console.log("LG Home/Away JSON Loaded:", data);
-
-    const ctx = document.getElementById("lgHomeAwayChart");
-    if (!ctx) return;
-
-    const homeFor = data.home_points_for;
-    const homeAgainst = data.home_points_against;
-    const awayFor = data.away_points_for;
-    const awayAgainst = data.away_points_against;
-
-    new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: ["홈 득점", "홈 실점", "원정 득점", "원정 실점"],
-        datasets: [
-          {
-            label: "평균 점수 (2024-25 실제 데이터)",
-            data: [homeFor, homeAgainst, awayFor, awayAgainst],
-            backgroundColor: [
-              "#FFC72C",
-              "#f97373",
-              "#60a5fa",
-              "#a78bfa"
-            ]
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            labels: {
-              color: "#E5E7EB",
-              font: { size: 10 }
-            }
-          }
-        },
-        scales: {
-          x: {
-            ticks: { color: "#E5E7EB", font: { size: 10 } },
-            grid: { color: "rgba(148, 163, 184, 0.2)" }
-          },
-          y: {
-            ticks: { color: "#E5E7EB", font: { size: 10 } },
-            grid: { color: "rgba(148, 163, 184, 0.2)" }
-          }
-        }
-      }
-    });
-  })
-  .catch(err => {
-    console.error("JSON 로드 실패 (home/away):", err);
-  });
 
 // 관중수 차트 (lg_crowd_clean.json 사용)
 let crowdChart = null;
@@ -864,6 +619,66 @@ fetch("season_trends.json")
         `;
         specialEventsList.appendChild(eventDiv);
       });
+    }
+
+    // 평일 이벤트 효과 비교 차트 (2025-12-04 목요일)
+    const weekdayEventCtx = document.getElementById("weekdayEventChart");
+    if (weekdayEventCtx) {
+      // LG 세이커스 데이터도 함께 로드
+      fetch("lg_crowd_clean.json")
+        .then(res => res.json())
+        .then(lgData => {
+          const weekdayAvg = lgData.season_weekday_avg["2024-2025"];
+          const eventAttendance = 2984; // 2025-12-04 목요일 이벤트 관중수
+          const diff = eventAttendance - weekdayAvg;
+          const diffPercent = ((diff / weekdayAvg) * 100).toFixed(1);
+
+          new Chart(weekdayEventCtx, {
+            type: "bar",
+            data: {
+              labels: ["평일 평균 관중수", "이벤트 날 관중수\n(2025-12-04 목)"],
+              datasets: [{
+                label: "관중수",
+                data: [weekdayAvg, eventAttendance],
+                backgroundColor: ["#94A3B8", "#FFC72C"],
+                borderColor: ["#64748B", "#FFC72C"],
+                borderWidth: 2
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  callbacks: {
+                    afterLabel: function(context) {
+                      if (context.dataIndex === 1) {
+                        return `평일 평균 대비: ${diff > 0 ? '+' : ''}${diff.toLocaleString()}명 (${diffPercent}%)`;
+                      }
+                      return "";
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  ticks: { color: "#E5E7EB", font: { size: 10 } },
+                  grid: { color: "rgba(148, 163, 184, 0.2)" }
+                },
+                y: {
+                  ticks: { color: "#E5E7EB", font: { size: 10 } },
+                  grid: { color: "rgba(148, 163, 184, 0.2)" },
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+        })
+        .catch(err => {
+          console.error("JSON 로드 실패 (lg_crowd for weekday event):", err);
+        });
     }
   })
   .catch(err => {

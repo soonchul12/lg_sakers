@@ -33,7 +33,6 @@
         </div>
         <div class="hidden md:flex gap-6 text-sm text-slate-200">
           <a href="#intro" class="hover:text-white">Intro</a>
-          <a href="#dashboard" class="hover:text-white">Data</a>
           <a href="#realdata" class="hover:text-white">Real Data</a>
           <a href="#benchmark" class="hover:text-white">Benchmark</a>
           <a href="#trends" class="hover:text-white">Trends</a>
@@ -70,50 +69,23 @@
       </div>
       <div class="relative">
         <div class="rounded-3xl border border-white/10 bg-black/40 p-5 shadow-xl">
-          <p class="text-xs text-slate-400 mb-2">2024-25 시즌 요약(샘플 데이터)</p>
+          <p class="text-xs text-slate-400 mb-2">2024-25 시즌 관중수 요약</p>
           <div class="grid grid-cols-3 gap-3 text-center text-sm">
             <div class="bg-white/5 rounded-2xl p-3">
-              <p class="text-[10px] text-slate-400 mb-1">정규리그 성적</p>
-              <p class="text-xl font-extrabold">34-20</p>
-              <p class="text-[10px] text-emerald-400 mt-1">2위</p>
+              <p class="text-[10px] text-slate-400 mb-1">시즌 평균 관중수</p>
+              <p class="text-xl font-extrabold" id="heroSeasonAvg">-</p>
+              <p class="text-[10px] text-emerald-400 mt-1">리그 2위</p>
             </div>
             <div class="bg-white/5 rounded-2xl p-3">
-              <p class="text-[10px] text-slate-400 mb-1">평균 득점</p>
-              <p class="text-xl font-extrabold">82.3</p>
-              <p class="text-[10px] text-sky-400 mt-1">+4.1 vs 리그</p>
+              <p class="text-[10px] text-slate-400 mb-1">주말 평균</p>
+              <p class="text-xl font-extrabold" id="heroWeekendAvg">-</p>
+              <p class="text-[10px] text-sky-400 mt-1">주중 대비 +45%</p>
             </div>
             <div class="bg-white/5 rounded-2xl p-3">
-              <p class="text-[10px] text-slate-400 mb-1">평균 실점</p>
-              <p class="text-xl font-extrabold">76.8</p>
-              <p class="text-[10px] text-rose-400 mt-1">수비 탑티어</p>
+              <p class="text-[10px] text-slate-400 mb-1">주중 평균</p>
+              <p class="text-xl font-extrabold" id="heroWeekdayAvg">-</p>
+              <p class="text-[10px] text-rose-400 mt-1">개선 여지</p>
             </div>
-          </div>
-          <div class="mt-4">
-            <canvas id="heroWinRateChart" height="120"></canvas>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Data Dashboard 섹션 (샘플 차트) -->
-    <section id="dashboard" class="border-t border-white/10 bg-black/30">
-      <div class="max-w-6xl mx-auto px-4 py-16">
-        <h2 class="section-title mb-3">
-          LG 세이커스 <span class="accent">퍼포먼스 & 관중</span> 대시보드
-        </h2>
-        <p class="text-sm md:text-base text-slate-200 mb-8 max-w-3xl">
-          최근 시즌 성적과 홈 경기 지표를 기반으로, 경기력과 팬 참여 사이의 관계를 시각화한 섹션입니다.
-          실제 데이터로 교체 가능하도록 구조를 설계해두었습니다.
-        </p>
-
-        <div class="grid md:grid-cols-2 gap-8">
-          <div class="bg-white/5 rounded-3xl p-5">
-            <h3 class="font-semibold mb-3 text-sm">최근 5시즌 정규리그 승률(샘플)</h3>
-            <canvas id="seasonWinRateChart" height="180"></canvas>
-          </div>
-          <div class="bg-white/5 rounded-3xl p-5">
-            <h3 class="font-semibold mb-3 text-sm">홈 경기 평균 득점 vs 실점(샘플)</h3>
-            <canvas id="homePtsChart" height="180"></canvas>
           </div>
         </div>
       </div>
@@ -126,12 +98,9 @@
           2024-25 LG 세이커스 <span class="accent">실제 데이터</span> 차트
         </h2>
         <p class="text-sm md:text-base text-slate-200 mb-6 max-w-3xl">
-          Python 스크립트로 위키 데이터를 수집한 뒤, JSON 파일을 Chart.js에 직접 연결해
-          승·패·득점·실점·득실차를 시각화한 섹션입니다.
+          Python 스크립트로 엑셀 데이터를 수집한 뒤, JSON 파일을 Chart.js에 직접 연결해
+          관중수 데이터를 시각화한 섹션입니다.
         </p>
-
-        <!-- 정규리그 성적 요약 차트 -->
-        <canvas id="lgChart" height="150"></canvas>
 
         <!-- 년도별 평균 관중수 차트 -->
         <div class="mt-10">
@@ -171,44 +140,6 @@
           <canvas id="crowdChart" height="160"></canvas>
         </div>
 
-        <!-- 홈/원정 득점·실점 비교 차트 -->
-        <div class="mt-10">
-          <h3 class="font-semibold mb-3 text-sm">홈 vs 원정 평균 득점·실점 (실제 데이터)</h3>
-          <canvas id="lgHomeAwayChart" height="180"></canvas>
-        </div>
-      </div>
-
-      <!-- JSON 요약 카드 -->
-      <div class="max-w-6xl mx-auto px-4 pb-16">
-        <div class="grid md:grid-cols-3 gap-4 text-sm">
-          <div class="bg-white/5 rounded-2xl p-4">
-            <p class="text-xs text-slate-400 mb-1">정규리그 성적</p>
-            <p class="text-lg font-extrabold">
-              <span id="winsValue">-</span>승
-              <span id="lossesValue">-</span>패
-            </p>
-            <p class="text-[11px] text-yellow-300 mt-1">
-              승률 <span id="winPctValue">-</span>%
-            </p>
-          </div>
-
-          <div class="bg-white/5 rounded-2xl p-4">
-            <p class="text-xs text-slate-400 mb-1">총 득·실점</p>
-            <p class="text-lg font-extrabold">
-              득점 <span id="pfValue">-</span> · 실점 <span id="paValue">-</span>
-            </p>
-            <p class="text-[11px] text-emerald-300 mt-1">
-              득실차 <span id="diffValue">-</span>
-            </p>
-          </div>
-
-          <div class="bg-white/5 rounded-2xl p-4">
-            <p class="text-xs text-slate-400 mb-1">요약 인사이트</p>
-            <p class="text-[11px] text-slate-200 leading-relaxed" id="summaryText">
-              JSON 데이터를 불러오는 중입니다...
-            </p>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -346,6 +277,12 @@
         <div class="mb-10">
           <h3 class="font-semibold mb-3 text-sm">2024-2025 시즌 월별 평균 관중수</h3>
           <canvas id="monthlyTrendChart" height="180"></canvas>
+        </div>
+
+        <!-- 평일 이벤트 효과 비교 -->
+        <div class="mb-10">
+          <h3 class="font-semibold mb-3 text-sm">평일 이벤트 효과 분석 (2025-12-04 목요일)</h3>
+          <canvas id="weekdayEventChart" height="180"></canvas>
         </div>
 
         <!-- 특별 이벤트 효과 분석 -->
