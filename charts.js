@@ -234,10 +234,25 @@ fetch("lg_crowd_clean.json")
               },
               tooltip: {
                 callbacks: {
+                  title: function(context) {
+                    const dataIndex = context[0].dataIndex;
+                    const gameData = sortedData[dataIndex];
+                    const date = gameData.날짜;
+                    const opponent = gameData.상대팀 || gameData.상대 || gameData.VS || gameData.vs;
+                    if (opponent) {
+                      return `${date} vs ${opponent}`;
+                    }
+                    return date;
+                  },
                   afterLabel: function(context) {
                     const dataIndex = context.dataIndex;
                     const isWeekend = sortedData[dataIndex].is_weekend;
-                    return isWeekend ? "주말 (토·일)" : "주중 (월~금)";
+                    const opponent = sortedData[dataIndex].상대팀 || sortedData[dataIndex].상대 || sortedData[dataIndex].VS || sortedData[dataIndex].vs;
+                    let result = isWeekend ? "주말 (토·일)" : "주중 (월~금)";
+                    if (opponent) {
+                      result += `\n상대팀: ${opponent}`;
+                    }
+                    return result;
                   }
                 }
               }

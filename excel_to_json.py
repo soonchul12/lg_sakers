@@ -4,6 +4,14 @@ from datetime import datetime
 
 df = pd.read_excel("lg_crowd.xlsx")
 
+# all.xlsx에서 상대팀 정보 가져오기
+try:
+    all_df = pd.read_excel("all.xlsx")
+    print("✅ all.xlsx 파일을 읽었습니다. 상대팀 정보를 매칭합니다...")
+except FileNotFoundError:
+    all_df = None
+    print("⚠️  all.xlsx 파일을 찾을 수 없습니다. 상대팀 정보 없이 진행합니다.")
+
 # 시즌 시작 연도 구하기 (예: "2025-2026" → 2025)
 def get_start_year(season_str):
     try:
@@ -86,10 +94,166 @@ for season in df["시즌"].unique():
     else:
         season_weekday_avg[season] = 0
 
+# 날짜 정규화 함수
+def normalize_date_for_match(date_val):
+    """매칭을 위한 날짜 정규화"""
+    if pd.isna(date_val):
+        return None
+    try:
+        if isinstance(date_val, float):
+            date_str = f"{date_val:.2f}"
+            parts = date_str.split(".")
+            m = int(parts[0])
+            d = round(float("0." + parts[1]) * 100)
+        else:
+            date_str = str(date_val).strip()
+            m, d = date_str.split(".")
+            m = int(m)
+            d = int(d)
+        return f"{m:02d}.{d:02d}"
+    except:
+        return None
+
+# 팀명 정규화 함수
+def normalize_team_name(team_name):
+    """팀명을 표준 형식으로 정규화"""
+    team_name_mapping = {
+        '서울SK': '서울 SK',
+        '서울 SK': '서울 SK',
+        '서울삼성': '서울 삼성',
+        '서울 삼성': '서울 삼성',
+        '원주DB': '원주 DB',
+        '원주 DB': '원주 DB',
+        '원주동부': '원주 DB',
+        '부산KCC': '부산 KCC',
+        '부산 KCC': '부산 KCC',
+        '전주KCC': '부산 KCC',
+        '전주 KCC': '부산 KCC',
+        '안양KGC': '안양 KGC',
+        '안양 KGC': '안양 KGC',
+        '안양 정관장': '안양 KGC',
+        '수원KT': '수원 KT',
+        '수원 KT': '수원 KT',
+        '부산KT': '수원 KT',
+        '울산현대모비스': '울산 현대모비스',
+        '울산 현대모비스': '울산 현대모비스',
+        '울산모비스': '울산 현대모비스',
+        '대구 한국가스공사': '대구 한국가스공사',
+        '고양오리온': '고양 오리온',
+        '고양 오리온': '고양 오리온',
+        '고양오리온스': '고양 오리온',
+        '고양 소노': '고양 Sono',
+        '고양 Sono': '고양 Sono',
+        '고양 캐롯': '고양 Sono',
+        '인천전자랜드': '인천 전자랜드',
+        '인천 전자랜드': '인천 전자랜드'
+    }
+    return team_name_mapping.get(team_name, team_name)
+
+# 상대팀 정보 매칭 (개선된 버전)
+def find_opponent(row):
+    """all.xlsx에서 같은 시즌의 다른 팀을 찾아 상대팀으로 반환
+    우선순위: 1) 경기번호 + 날짜, 2) 경기번호만, 3) 날짜만
+    """
+    if all_df is None:
+        return None
+    
+    season = str(row["시즌"])
+    game_num = row["경기 번호"]
+    date_val = row["날짜"]
+    normalized_date = normalize_date_for_match(date_val)
+    round_info = row.get("라운드", None)
+    
+    # 같은 시즌의 다른 팀 찾기 (LG가 아닌 팀)
+    opponent_games = all_df[
+        (all_df['시즌'] == season) & 
+        (~all_df['팀 관중현황'].str.contains('LG|창원', na=False, regex=True))
+    ].copy()
+    
+    if len(opponent_games) == 0:
+        return None
+    
+    # 날짜 정규화
+    opponent_games['normalized_date'] = opponent_games['날짜'].apply(normalize_date_for_match)
+    
+    # 방법 1: 경기 번호 + 날짜로 매칭 (가장 정확)
+    if normalized_date is not None:
+        same_game_and_date = opponent_games[
+            (opponent_games['경기 번호'] == game_num) &
+            (opponent_games['normalized_date'] == normalized_date)
+        ]
+        if len(same_game_and_date) > 0:
+            opponent = same_game_and_date.iloc[0]['팀 관중현황']
+            return normalize_team_name(opponent)
+    
+    # 방법 2: 경기 번호만으로 매칭 (같은 경기 번호는 같은 경기)
+    same_game_num = opponent_games[opponent_games['경기 번호'] == game_num]
+    if len(same_game_num) > 0:
+        # 라운드 정보가 있으면 라운드도 고려
+        if round_info and '라운드' in same_game_num.columns:
+            same_round = same_game_num[same_game_num['라운드'] == round_info]
+            if len(same_round) > 0:
+                opponent = same_round.iloc[0]['팀 관중현황']
+                return normalize_team_name(opponent)
+        # 라운드 정보가 없거나 매칭 안 되면 첫 번째 사용
+        opponent = same_game_num.iloc[0]['팀 관중현황']
+        return normalize_team_name(opponent)
+    
+    # 방법 3: 날짜 + 라운드로 매칭
+    if normalized_date is not None and round_info:
+        same_date_round = opponent_games[
+            (opponent_games['normalized_date'] == normalized_date) &
+            (opponent_games['라운드'] == round_info)
+        ]
+        if len(same_date_round) > 0:
+            opponent = same_date_round.iloc[0]['팀 관중현황']
+            return normalize_team_name(opponent)
+    
+    # 방법 4: 날짜만으로 매칭 (fallback)
+    if normalized_date is not None:
+        same_date_teams = opponent_games[opponent_games['normalized_date'] == normalized_date]
+        if len(same_date_teams) > 0:
+            # 경기 번호가 가장 가까운 팀 선택
+            same_date_teams['game_num_diff'] = abs(same_date_teams['경기 번호'] - game_num)
+            closest_team = same_date_teams.nsmallest(1, 'game_num_diff')
+            opponent = closest_team.iloc[0]['팀 관중현황']
+            return normalize_team_name(opponent)
+    
+    # 방법 5: 라운드만으로 매칭 (같은 라운드의 다른 팀)
+    if round_info:
+        same_round_teams = opponent_games[opponent_games['라운드'] == round_info]
+        if len(same_round_teams) > 0:
+            # 날짜가 가장 가까운 팀 선택
+            if normalized_date is not None:
+                same_round_teams['date_diff'] = same_round_teams['normalized_date'].apply(
+                    lambda x: abs(int(x.split('.')[0]) * 100 + int(x.split('.')[1]) - 
+                                 (int(normalized_date.split('.')[0]) * 100 + int(normalized_date.split('.')[1]))) 
+                    if x and x != normalized_date else 999
+                )
+                closest_team = same_round_teams.nsmallest(1, 'date_diff')
+                if len(closest_team) > 0 and closest_team.iloc[0]['date_diff'] < 10:  # 10일 이내
+                    opponent = closest_team.iloc[0]['팀 관중현황']
+                    return normalize_team_name(opponent)
+    
+    return None
+
+# 상대팀 정보 추가
+if all_df is not None:
+    df["상대팀"] = df.apply(find_opponent, axis=1)
+    matched_count = df["상대팀"].notna().sum()
+    total_count = len(df)
+    print(f"✅ 상대팀 매칭 완료: {matched_count}/{total_count} 경기 ({matched_count/total_count*100:.1f}%)")
+else:
+    df["상대팀"] = None
+
 # 경기별 데이터 정렬
 df = df.sort_values("fixed_date")
 # 요일 정보 포함하여 경기별 데이터 생성
-game_by_game = df[["fixed_date", "관중수", "is_weekend"]].rename(columns={"fixed_date": "날짜"}).to_dict(orient="records")
+game_by_game_columns = ["fixed_date", "관중수", "is_weekend"]
+if "상대팀" in df.columns and df["상대팀"].notna().any():
+    game_by_game_columns.append("상대팀")
+
+game_by_game = df[game_by_game_columns].rename(columns={"fixed_date": "날짜"}).to_dict(orient="records")
 
 # JSON 구조 생성
 output = {
