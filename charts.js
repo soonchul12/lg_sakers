@@ -200,76 +200,157 @@ fetch("lg_crowd_clean.json")
         nextBtn.disabled = currentCrowdIndex === 0;
       }
 
+      // 차트 옵션에 sortedData를 저장하여 tooltip에서 사용할 수 있도록 함
+      const chartOptions = {
+        responsive: true,
+        plugins: {
+          legend: {
+            labels: { color: "#E5E7EB", font: { size: 10 } },
+            display: true
+          },
+          tooltip: {
+            callbacks: {
+              title: function(context) {
+                const dataIndex = context[0].dataIndex;
+                // sortedData는 현재 페이지의 데이터이므로 인덱스가 올바르게 매핑됨
+                if (dataIndex >= 0 && dataIndex < sortedData.length) {
+                  const gameData = sortedData[dataIndex];
+                  const date = gameData.날짜;
+                  const opponent = gameData.상대팀 || gameData.상대 || gameData.VS || gameData.vs;
+                  if (opponent) {
+                    return `${date} vs ${opponent}`;
+                  }
+                  return date;
+                }
+                return "";
+              },
+              afterLabel: function(context) {
+                const dataIndex = context.dataIndex;
+                // sortedData는 현재 페이지의 데이터이므로 인덱스가 올바르게 매핑됨
+                if (dataIndex >= 0 && dataIndex < sortedData.length) {
+                  const gameData = sortedData[dataIndex];
+                  const isWeekend = gameData.is_weekend;
+                  const opponent = gameData.상대팀 || gameData.상대 || gameData.VS || gameData.vs;
+                  let result = isWeekend ? "주말 (토·일)" : "주중 (월~금)";
+                  if (opponent) {
+                    result += `\n상대팀: ${opponent}`;
+                  }
+                  return result;
+                }
+                return "";
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: "#E5E7EB", font: { size: 9 } },
+            grid: { color: "rgba(255,255,255,0.1)" }
+          },
+          y: {
+            ticks: { color: "#E5E7EB", font: { size: 10 } },
+            grid: { color: "rgba(255,255,255,0.1)" },
+            beginAtZero: true
+          }
+        }
+      };
+
       // 차트 업데이트 또는 생성
+      // sortedData를 차트 객체에 저장하여 tooltip에서 항상 최신 데이터를 참조하도록 함
       if (crowdChart) {
+        // 기존 차트 업데이트 시 sortedData를 차트 객체에 저장
+        crowdChart.currentSortedData = sortedData; // 현재 페이지의 정렬된 데이터 저장
         crowdChart.data.labels = labels;
         crowdChart.data.datasets[0].data = values;
         crowdChart.data.datasets[0].pointBackgroundColor = pointBackgroundColors;
         crowdChart.data.datasets[0].pointBorderColor = pointBorderColors;
+        // tooltip callback에서 저장된 sortedData를 사용
+        crowdChart.options.plugins.tooltip.callbacks.title = function(context) {
+          const dataIndex = context[0].dataIndex;
+          const currentData = this.chart.currentSortedData || sortedData;
+          if (dataIndex >= 0 && dataIndex < currentData.length) {
+            const gameData = currentData[dataIndex];
+            const date = gameData.날짜;
+            const opponent = gameData.상대팀 || gameData.상대 || gameData.VS || gameData.vs;
+            if (opponent) {
+              return `${date} vs ${opponent}`;
+            }
+            return date;
+          }
+          return "";
+        };
+        crowdChart.options.plugins.tooltip.callbacks.afterLabel = function(context) {
+          const dataIndex = context.dataIndex;
+          const currentData = this.chart.currentSortedData || sortedData;
+          if (dataIndex >= 0 && dataIndex < currentData.length) {
+            const gameData = currentData[dataIndex];
+            const isWeekend = gameData.is_weekend;
+            const opponent = gameData.상대팀 || gameData.상대 || gameData.VS || gameData.vs;
+            let result = isWeekend ? "주말 (토·일)" : "주중 (월~금)";
+            if (opponent) {
+              result += `\n상대팀: ${opponent}`;
+            }
+            return result;
+          }
+          return "";
+        };
         crowdChart.update();
       } else {
+        // 새 차트 생성 시 sortedData를 차트 객체에 저장
+        const chartData = {
+          labels: labels,
+          datasets: [{
+            label: "LG 세이커스 홈 관중수",
+            data: values,
+            borderColor: "#FFC72C",
+            backgroundColor: "rgba(255, 199, 44, 0.3)",
+            tension: 0.3,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            pointBackgroundColor: pointBackgroundColors,
+            pointBorderColor: pointBorderColors,
+            pointBorderWidth: 2
+          }]
+        };
+        
+        // tooltip callback에서 차트 객체에 저장된 sortedData를 사용
+        chartOptions.plugins.tooltip.callbacks.title = function(context) {
+          const dataIndex = context[0].dataIndex;
+          const currentData = this.chart.currentSortedData || sortedData;
+          if (dataIndex >= 0 && dataIndex < currentData.length) {
+            const gameData = currentData[dataIndex];
+            const date = gameData.날짜;
+            const opponent = gameData.상대팀 || gameData.상대 || gameData.VS || gameData.vs;
+            if (opponent) {
+              return `${date} vs ${opponent}`;
+            }
+            return date;
+          }
+          return "";
+        };
+        chartOptions.plugins.tooltip.callbacks.afterLabel = function(context) {
+          const dataIndex = context.dataIndex;
+          const currentData = this.chart.currentSortedData || sortedData;
+          if (dataIndex >= 0 && dataIndex < currentData.length) {
+            const gameData = currentData[dataIndex];
+            const isWeekend = gameData.is_weekend;
+            const opponent = gameData.상대팀 || gameData.상대 || gameData.VS || gameData.vs;
+            let result = isWeekend ? "주말 (토·일)" : "주중 (월~금)";
+            if (opponent) {
+              result += `\n상대팀: ${opponent}`;
+            }
+            return result;
+          }
+          return "";
+        };
+        
         crowdChart = new Chart(crowdCtx, {
           type: "line",
-          data: {
-            labels: labels,
-            datasets: [{
-              label: "LG 세이커스 홈 관중수",
-              data: values,
-              borderColor: "#FFC72C",
-              backgroundColor: "rgba(255, 199, 44, 0.3)",
-              tension: 0.3,
-              pointRadius: 6,
-              pointHoverRadius: 8,
-              pointBackgroundColor: pointBackgroundColors,
-              pointBorderColor: pointBorderColors,
-              pointBorderWidth: 2
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                labels: { color: "#E5E7EB", font: { size: 10 } },
-                display: true
-              },
-              tooltip: {
-                callbacks: {
-                  title: function(context) {
-                    const dataIndex = context[0].dataIndex;
-                    const gameData = sortedData[dataIndex];
-                    const date = gameData.날짜;
-                    const opponent = gameData.상대팀 || gameData.상대 || gameData.VS || gameData.vs;
-                    if (opponent) {
-                      return `${date} vs ${opponent}`;
-                    }
-                    return date;
-                  },
-                  afterLabel: function(context) {
-                    const dataIndex = context.dataIndex;
-                    const isWeekend = sortedData[dataIndex].is_weekend;
-                    const opponent = sortedData[dataIndex].상대팀 || sortedData[dataIndex].상대 || sortedData[dataIndex].VS || sortedData[dataIndex].vs;
-                    let result = isWeekend ? "주말 (토·일)" : "주중 (월~금)";
-                    if (opponent) {
-                      result += `\n상대팀: ${opponent}`;
-                    }
-                    return result;
-                  }
-                }
-              }
-            },
-            scales: {
-              x: {
-                ticks: { color: "#E5E7EB", font: { size: 9 } },
-                grid: { color: "rgba(255,255,255,0.1)" }
-              },
-              y: {
-                ticks: { color: "#E5E7EB", font: { size: 10 } },
-                grid: { color: "rgba(255,255,255,0.1)" },
-                beginAtZero: true
-              }
-            }
-          }
+          data: chartData,
+          options: chartOptions
         });
+        // 차트 생성 후 sortedData 저장
+        crowdChart.currentSortedData = sortedData;
       }
     }
 
@@ -636,25 +717,41 @@ fetch("season_trends.json")
       });
     }
 
-    // 평일 이벤트 효과 비교 차트 (2025-12-04 목요일)
+    // 세이커스데이 이전/이후 평균 관중수 비교 차트 (2024-2025 시즌)
     const weekdayEventCtx = document.getElementById("weekdayEventChart");
     if (weekdayEventCtx) {
       // LG 세이커스 데이터도 함께 로드
       fetch("lg_crowd_clean.json")
         .then(res => res.json())
         .then(lgData => {
-          const weekdayAvg = lgData.season_weekday_avg["2025-2026"];
-          const eventAttendance = 2984; // 2025-12-04 목요일 이벤트 관중수
-          const diff = eventAttendance - weekdayAvg;
-          const diffPercent = ((diff / weekdayAvg) * 100).toFixed(1);
+          // 2024-2025 시즌 데이터에서 12월 28일 전후로 나누기
+          const seasonGames = lgData.game_by_game.filter(game => {
+            const date = game.날짜;
+            // 2024-10-01부터 2025-04-30까지가 2024-2025 시즌
+            return date >= '2024-10-01' && date < '2025-05-01';
+          });
+
+          const beforeDate = '2024-12-28';
+          const beforeGames = seasonGames.filter(g => g.날짜 < beforeDate);
+          const afterGames = seasonGames.filter(g => g.날짜 >= beforeDate);
+
+          const beforeAvg = beforeGames.length > 0 
+            ? Math.round(beforeGames.reduce((sum, g) => sum + g.관중수, 0) / beforeGames.length)
+            : 0;
+          const afterAvg = afterGames.length > 0
+            ? Math.round(afterGames.reduce((sum, g) => sum + g.관중수, 0) / afterGames.length)
+            : 0;
+
+          const diff = afterAvg - beforeAvg;
+          const diffPercent = beforeAvg > 0 ? ((diff / beforeAvg) * 100).toFixed(1) : 0;
 
           new Chart(weekdayEventCtx, {
             type: "bar",
             data: {
-              labels: ["2025-2026 시즌\n평일 평균 관중수", "이벤트 날 관중수\n(2025-12-04 목)"],
+              labels: ["세이커스데이 이전\n(2024-12-28 이전)", "세이커스데이 이후\n(2024-12-28 이후)"],
               datasets: [{
-                label: "관중수",
-                data: [weekdayAvg, eventAttendance],
+                label: "평균 관중수",
+                data: [beforeAvg, afterAvg],
                 backgroundColor: ["#94A3B8", "#FFC72C"],
                 borderColor: ["#64748B", "#FFC72C"],
                 borderWidth: 2
@@ -668,11 +765,16 @@ fetch("season_trends.json")
                 },
                 tooltip: {
                   callbacks: {
+                    label: function(context) {
+                      return `평균 관중수: ${context.parsed.y.toLocaleString()}명`;
+                    },
                     afterLabel: function(context) {
                       if (context.dataIndex === 1) {
-                        return `평일 평균 대비: ${diff > 0 ? '+' : ''}${diff.toLocaleString()}명 (${diffPercent}%)`;
+                        return `세이커스데이 이전 대비: ${diff > 0 ? '+' : ''}${diff.toLocaleString()}명 (${diffPercent > 0 ? '+' : ''}${diffPercent}%)`;
+                      } else if (context.dataIndex === 0) {
+                        return `경기 수: ${beforeGames.length}경기`;
                       }
-                      return "";
+                      return `경기 수: ${afterGames.length}경기`;
                     }
                   }
                 }
@@ -692,7 +794,7 @@ fetch("season_trends.json")
           });
         })
         .catch(err => {
-          console.error("JSON 로드 실패 (lg_crowd for weekday event):", err);
+          console.error("JSON 로드 실패 (lg_crowd for sakers day):", err);
         });
     }
   })
