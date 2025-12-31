@@ -176,7 +176,7 @@ def find_opponent(row):
     # 날짜 정규화
     opponent_games['normalized_date'] = opponent_games['날짜'].apply(normalize_date_for_match)
     
-    # 방법 1: 경기 번호 + 날짜로 매칭 (가장 정확)
+    # 방법 1: 경기 번호 + 날짜로 매칭 (가장 정확) - 경기 번호가 정확히 일치해야 함
     if normalized_date is not None:
         same_game_and_date = opponent_games[
             (opponent_games['경기 번호'] == game_num) &
@@ -186,7 +186,7 @@ def find_opponent(row):
             opponent = same_game_and_date.iloc[0]['팀 관중현황']
             return normalize_team_name(opponent)
     
-    # 방법 2: 경기 번호만으로 매칭 (같은 경기 번호는 같은 경기)
+    # 방법 2: 경기 번호만으로 매칭 (같은 경기 번호는 같은 경기) - 경기 번호가 정확히 일치해야 함
     same_game_num = opponent_games[opponent_games['경기 번호'] == game_num]
     if len(same_game_num) > 0:
         # 라운드 정보가 있으면 라운드도 고려
@@ -199,42 +199,8 @@ def find_opponent(row):
         opponent = same_game_num.iloc[0]['팀 관중현황']
         return normalize_team_name(opponent)
     
-    # 방법 3: 날짜 + 라운드로 매칭
-    if normalized_date is not None and round_info:
-        same_date_round = opponent_games[
-            (opponent_games['normalized_date'] == normalized_date) &
-            (opponent_games['라운드'] == round_info)
-        ]
-        if len(same_date_round) > 0:
-            opponent = same_date_round.iloc[0]['팀 관중현황']
-            return normalize_team_name(opponent)
-    
-    # 방법 4: 날짜만으로 매칭 (fallback)
-    if normalized_date is not None:
-        same_date_teams = opponent_games[opponent_games['normalized_date'] == normalized_date]
-        if len(same_date_teams) > 0:
-            # 경기 번호가 가장 가까운 팀 선택
-            same_date_teams['game_num_diff'] = abs(same_date_teams['경기 번호'] - game_num)
-            closest_team = same_date_teams.nsmallest(1, 'game_num_diff')
-            opponent = closest_team.iloc[0]['팀 관중현황']
-            return normalize_team_name(opponent)
-    
-    # 방법 5: 라운드만으로 매칭 (같은 라운드의 다른 팀)
-    if round_info:
-        same_round_teams = opponent_games[opponent_games['라운드'] == round_info]
-        if len(same_round_teams) > 0:
-            # 날짜가 가장 가까운 팀 선택
-            if normalized_date is not None:
-                same_round_teams['date_diff'] = same_round_teams['normalized_date'].apply(
-                    lambda x: abs(int(x.split('.')[0]) * 100 + int(x.split('.')[1]) - 
-                                 (int(normalized_date.split('.')[0]) * 100 + int(normalized_date.split('.')[1]))) 
-                    if x and x != normalized_date else 999
-                )
-                closest_team = same_round_teams.nsmallest(1, 'date_diff')
-                if len(closest_team) > 0 and closest_team.iloc[0]['date_diff'] < 10:  # 10일 이내
-                    opponent = closest_team.iloc[0]['팀 관중현황']
-                    return normalize_team_name(opponent)
-    
+    # 경기 번호가 일치하지 않으면 매칭하지 않음
+    # (all.xlsx에는 홈 경기만 있고 원정 경기 데이터가 없어서 잘못된 매칭을 방지)
     return None
 
 # 상대팀 정보 추가

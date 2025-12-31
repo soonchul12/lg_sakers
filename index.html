@@ -20,7 +20,7 @@
 </head>
 <body class="bg-sakers text-slate-50">
   <!-- 전체 컨테이너 -->
-  <div class="min-h-screen">
+  <div class="min-h-screen" id="mainContainer">
 
     <!-- 네비게이션 -->
     <header class="sticky top-0 z-30 backdrop-blur bg-black/40 border-b border-white/10">
@@ -32,15 +32,12 @@
           </span>
         </div>
         <div class="hidden md:flex gap-6 text-sm text-slate-200">
-          <a href="#intro" class="hover:text-white">Intro</a>
-          <a href="#realdata" class="hover:text-white">Real Data</a>
-          <a href="#benchmark" class="hover:text-white">Benchmark</a>
-          <a href="#trends" class="hover:text-white">Trends</a>
-          <a href="#sns" class="hover:text-white">SNS</a>
-          <a href="#goods" class="hover:text-white">Goods</a>
-          <a href="#ux" class="hover:text-white">Fan UX</a>
-          <a href="#plan" class="hover:text-white">Action Plan</a>
-          <a href="#about" class="hover:text-white">About</a>
+          <a href="#intro" class="nav-link hover:text-white">Intro</a>
+          <a href="#realdata" class="nav-link hover:text-white">Real Data</a>
+          <a href="#benchmark" class="nav-link hover:text-white">Benchmark</a>
+          <a href="#trends" class="nav-link hover:text-white">Trends</a>
+          <a href="#casestudy" class="nav-link hover:text-white">케이스스터디</a>
+          <a href="#about" class="nav-link hover:text-white">About</a>
         </div>
       </nav>
     </header>
@@ -318,158 +315,6 @@
       </div>
     </section>
 
-    <!-- SNS & Fan Behavior 섹션 -->
-    <section id="sns" class="border-t border-white/10">
-      <div class="max-w-6xl mx-auto px-4 py-16 grid md:grid-cols-2 gap-10 items-start">
-        <div>
-          <h2 class="section-title mb-3">
-            SNS 반응 & 팬 행동 <span class="accent">분석</span>
-          </h2>
-          <p class="text-sm md:text-base text-slate-200 mb-6">
-            게시물 유형별 참여도, 요일/시간대별 반응을 기반으로
-            LG 세이커스 디지털 채널의 최적 업로드 전략을 설계합니다.
-          </p>
-          <div class="bg-white/5 rounded-3xl p-5 mb-4">
-            <h3 class="font-semibold mb-3 text-sm">콘텐츠 타입별 참여율(샘플)</h3>
-            <canvas id="snsTypeChart" height="160"></canvas>
-          </div>
-          <p class="text-xs text-slate-400">
-            * 실제 구현 시 인스타그램/유튜브 API 또는 크롤링 데이터를 활용해 자동 업데이트 가능
-          </p>
-        </div>
-        <div class="space-y-4">
-          <div class="bg-gradient-to-br from-yellow-500/20 to-rose-500/20 border border-yellow-400/40 rounded-3xl p-5">
-            <p class="text-[10px] uppercase tracking-[0.2em] text-yellow-300 mb-2">Case Insight</p>
-            <p class="text-sm mb-2 font-semibold">
-              하이라이트 클립 + 짧은 밈 콘텐츠의 참여율이 카드뉴스 대비 1.8배
-            </p>
-            <p class="text-xs text-slate-200">
-              → 빅매치/라이벌전에는 ‘하이라이트 클립 + 밈형 썸네일 + 굿즈 쿠폰’ 패키지 운영 제안
-            </p>
-          </div>
-          <div class="bg-white/5 rounded-3xl p-5">
-            <p class="text-xs text-slate-400 mb-2">SNS 카드뉴스 샘플 (추후 이미지 교체)</p>
-            <div class="aspect-[4/3] rounded-2xl bg-slate-900 flex items-center justify-center text-xs text-slate-500">
-              여기에 실제 카드뉴스 / 리얼스 썸네일 이미지를 넣으면 좋아요
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Goods 섹션 -->
-    <section id="goods" class="border-t border-white/10 bg-black/30">
-      <div class="max-w-6xl mx-auto px-4 py-16">
-        <h2 class="section-title mb-3">
-          굿즈 매출 분석 & <span class="accent">신규 상품 전략</span>
-        </h2>
-        <p class="text-sm md:text-base text-slate-200 mb-8 max-w-3xl">
-          굿즈 카테고리별 매출 비중(샘플 데이터)을 기반으로 LG 세이커스만의 차별화된
-          굿즈 라인업과 시즌별 캠페인 전략을 제안합니다.
-        </p>
-
-        <div class="grid md:grid-cols-2 gap-8">
-          <div class="bg-white/5 rounded-3xl p-5">
-            <h3 class="font-semibold mb-3 text-sm">굿즈 카테고리별 매출 비중(샘플)</h3>
-            <canvas id="goodsChart" height="200"></canvas>
-          </div>
-          <div class="space-y-4">
-            <div class="bg-white/5 rounded-3xl p-4">
-              <p class="text-xs text-yellow-300 mb-1">제안 ①</p>
-              <p class="text-sm font-semibold mb-1">챔피언십 기념 한정판 후드 & 머플러 패키지</p>
-              <p class="text-xs text-slate-200">
-                홈 개막전/플레이오프 기간에만 판매하는 한정판 패키지로, 티켓 + 굿즈 번들 판매를 통해 객단가 상승을 노립니다.
-              </p>
-            </div>
-            <div class="bg-white/5 rounded-3xl p-4">
-              <p class="text-xs text-yellow-300 mb-1">제안 ②</p>
-              <p class="text-sm font-semibold mb-1">선수별 커스텀 포토카드 & 사인볼 랜덤박스</p>
-              <p class="text-xs text-slate-200">
-                Z세대 팬을 겨냥한 랜덤형 상품으로, SNS 인증 이벤트와 연계해 자연스러운 UGC 확산을 유도합니다.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Fan UX / 서비스 기획 섹션 -->
-    <section id="ux" class="border-t border-white/10">
-      <div class="max-w-6xl mx-auto px-4 py-16">
-        <h2 class="section-title mb-3">
-          팬 경험(Fan Experience) 중심 <span class="accent">UX 개선</span>
-        </h2>
-        <p class="text-sm md:text-base text-slate-200 mb-8 max-w-3xl">
-          예매 앱/웹, 경기장 동선, 이벤트 참여 과정을 하나의 여정으로 보고 설계한 UX 개선안입니다.
-          Before-After 비교로 문제 정의와 해결 방향을 명확하게 보여줍니다.
-        </p>
-
-        <div class="grid md:grid-cols-2 gap-8">
-          <div class="bg-white/5 rounded-3xl p-5">
-            <h3 class="font-semibold mb-3 text-sm">Before · 현재 팬 여정의 문제점</h3>
-            <ul class="text-xs space-y-2 text-slate-200 list-disc list-inside">
-              <li>예매 페이지와 좌석 배치 정보가 분리되어 있어, 원하는 좌석 탐색에 시간이 오래 걸림</li>
-              <li>경기장 내 굿즈샵/푸드존 위치 정보가 분산되어 있어 초행 팬에게 불친절함</li>
-              <li>이벤트 안내가 경기 당일 현장 중심이라, 사전 기대감을 키우기 어렵고 참여율이 낮음</li>
-            </ul>
-          </div>
-          <div class="bg-white/5 rounded-3xl p-5">
-            <h3 class="font-semibold mb-3 text-sm">After · 제안하는 개선 UX</h3>
-            <ul class="text-xs space-y-2 text-slate-200 list-disc list-inside">
-              <li>구장 3D 맵 기반 ‘좌석 뷰 미리보기’ 제공 → 예매 전/후 경험 연결</li>
-              <li>앱 홈에서 한 번에 보이는 “오늘의 경기 · 이벤트 · 굿즈” 통합 대시보드</li>
-              <li>경기 전날 푸시 알림로 ‘오늘의 키 플레이어 · 이벤트 · 한정 굿즈’ 패키지 안내</li>
-            </ul>
-            <p class="text-[11px] text-slate-400 mt-3">
-              * 실제 프로젝트에서는 Figma로 와이어프레임/프로토타입 제작 후 링크 삽입 예정
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Action Plan 섹션 -->
-    <section id="plan" class="border-t border-white/10 bg-black/40">
-      <div class="max-w-6xl mx-auto px-4 py-16">
-        <h2 class="section-title mb-3">
-          실행 계획 & <span class="accent">KPI</span>
-        </h2>
-        <p class="text-sm md:text-base text-slate-200 mb-8 max-w-3xl">
-          분석 인사이트를 실제 구단 마케팅 운영에 적용했을 때의 실행 단계와 기대 효과를 정리한 섹션입니다.
-        </p>
-
-        <div class="grid md:grid-cols-3 gap-6">
-          <div class="bg-white/5 rounded-3xl p-5 flex flex-col gap-2">
-            <p class="text-xs text-yellow-300">관중 수</p>
-            <p class="text-sm font-semibold">타깃 요일 집중 프로모션</p>
-            <ul class="text-xs text-slate-200 list-disc list-inside">
-              <li>평일 저조 구간 대상 20~30대 타깃 SNS 캠페인</li>
-              <li>패키지 티켓 + 굿즈 번들 구성</li>
-              <li>동종 리그/타 구단 벤치마킹</li>
-            </ul>
-          </div>
-          <div class="bg-white/5 rounded-3xl p-5 flex flex-col gap-2">
-            <p class="text-xs text-yellow-300">굿즈 매출</p>
-            <p class="text-sm font-semibold">빅매치 한정판 전략</p>
-            <ul class="text-xs text-slate-200 list-disc list-inside">
-              <li>라이벌전/플레이오프 한정판 굿즈 출시</li>
-              <li>온라인 사전예약 + 현장 픽업 시스템</li>
-              <li>UGC 이벤트 연계(인스타 인증샷)</li>
-            </ul>
-          </div>
-          <div class="bg-white/5 rounded-3xl p-5 flex flex-col gap-2">
-            <p class="text-xs text-yellow-300">팬 경험</p>
-            <p class="text-sm font-semibold">앱·웹 UX 개선 & 푸시 전략</p>
-            <ul class="text-xs text-slate-200 list-disc list-inside">
-              <li>맞춤형 푸시(관심 선수/좌석 기반)</li>
-              <li>경기 전·중·후 여정별 콘텐츠 설계</li>
-              <li>만족도 설문 데이터 축적 및 AB 테스트</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- About Me 섹션 -->
     <section id="about" class="border-t border-white/10">
       <div class="max-w-3xl mx-auto px-4 py-16 text-center">
@@ -477,14 +322,282 @@
           About <span class="accent">Me</span>
         </h2>
         <p class="text-sm md:text-base text-slate-200 mb-4">
-          (여기에 본인 소개, 목표, LG 세이커스/프로농구에 대한 관심, 데이터 분석 & 개발 스킬을 요약해서 적으면 좋아요)
+          권순철입니다(수정필요)
         </p>
         <p class="text-xs text-slate-400">
-          Email: your-email@example.com · GitHub: github.com/your-id · 기타 링크
+          Email: yeyiyeyi@naver.com · GitHub: github.com/soonchul12 ·
         </p>
       </div>
     </section>
 
+  </div>
+
+  <!-- 케이스스터디 화면 -->
+  <div id="caseStudyContainer" class="min-h-screen hidden">
+    <!-- 케이스스터디 네비게이션 -->
+    <header class="sticky top-0 z-30 backdrop-blur bg-black/40 border-b border-white/10">
+      <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
+        <div class="flex items-center gap-2">
+          <span class="font-extrabold text-lg tracking-tight">
+            Case <span class="accent">Study</span>
+          </span>
+        </div>
+        <div class="flex gap-6 text-sm text-slate-200">
+          <button id="backToMainBtn" class="hover:text-white">← 메인으로</button>
+        </div>
+      </nav>
+    </header>
+
+    <!-- 전북현대 섹션 -->
+    <section id="jeonbuk" class="max-w-6xl mx-auto px-4 py-16">
+      <div class="mb-12">
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-4" style="color: #00A651;">
+          전북현대 모터스
+        </h1>
+        <p class="text-slate-200 text-sm md:text-base mb-6">
+          K리그1 전북현대 모터스의 시즌별 관중수 데이터 분석
+        </p>
+      </div>
+
+      <!-- 전북현대 시즌별 관중수 차트 -->
+      <div class="mb-10">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-sm" style="color: #00A651;">시즌별 관중수</h3>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="text-slate-400">기간 선택:</span>
+            <select id="jeonbukStartSeason" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-slate-200" style="color: #00A651;">
+              <!-- JavaScript로 동적 생성 -->
+            </select>
+            <span class="text-slate-400">~</span>
+            <select id="jeonbukEndSeason" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-slate-200" style="color: #00A651;">
+              <!-- JavaScript로 동적 생성 -->
+            </select>
+            <button id="jeonbukApplyRange" class="px-3 py-1 rounded bg-white/10 hover:bg-white/20 border border-white/20 text-slate-200 transition">
+              적용
+            </button>
+          </div>
+        </div>
+        <canvas id="jeonbukChart" height="200"></canvas>
+      </div>
+
+      <!-- 전북현대 데이터 카드 -->
+      <div class="grid md:grid-cols-4 gap-4 mb-10">
+        <div class="bg-white/5 rounded-3xl p-5 border-2" style="border-color: #00A651;">
+          <p class="text-xs text-slate-400 mb-2">최고 관중수 시즌</p>
+          <p class="text-2xl font-extrabold mb-1" id="jeonbukMaxSeason" style="color: #00A651;">-</p>
+          <p class="text-xs text-slate-300" id="jeonbukMaxSeasonLabel">-</p>
+        </div>
+        <div class="bg-white/5 rounded-3xl p-5 border-2" style="border-color: #00A651;">
+          <p class="text-xs text-slate-400 mb-2">최근 시즌 관중수</p>
+          <p class="text-2xl font-extrabold mb-1" id="jeonbukLatestSeason" style="color: #00A651;">-</p>
+          <p class="text-xs text-slate-300" id="jeonbukLatestSeasonLabel">-</p>
+        </div>
+        <div class="bg-white/5 rounded-3xl p-5 border-2" style="border-color: #00A651;">
+          <p class="text-xs text-slate-400 mb-2">전체 평균 관중수</p>
+          <p class="text-2xl font-extrabold mb-1" id="jeonbukTotalAvg" style="color: #00A651;">-</p>
+          <p class="text-xs text-slate-300">전체 시즌</p>
+        </div>
+        <div class="bg-white/5 rounded-3xl p-5 border-2 border-dashed" style="border-color: #34D399;">
+          <p class="text-xs text-slate-400 mb-2">선택 기간 평균</p>
+          <p class="text-2xl font-extrabold mb-1" id="jeonbukSelectedAvg" style="color: #34D399;">-</p>
+          <p class="text-xs text-slate-300" id="jeonbukSelectedRange">기간 선택 필요</p>
+        </div>
+      </div>
+
+      <!-- 전북현대 상세 데이터 테이블 -->
+      <div class="bg-white/5 rounded-3xl p-6">
+        <h3 class="font-semibold mb-4 text-sm" style="color: #00A651;">시즌별 상세 데이터</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-white/10">
+                <th class="text-left py-3 px-4" style="color: #00A651;">시즌</th>
+                <th class="text-right py-3 px-4" style="color: #00A651;">관중수</th>
+                <th class="text-right py-3 px-4" style="color: #00A651;">경기수</th>
+                <th class="text-right py-3 px-4" style="color: #00A651;">경기당 평균</th>
+              </tr>
+            </thead>
+            <tbody id="jeonbukTableBody" class="text-slate-200">
+              <!-- JavaScript로 동적 생성 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- KB스타즈 섹션 -->
+    <section id="kbstars" class="max-w-6xl mx-auto px-4 py-16 border-t border-white/10">
+      <div class="mb-12">
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-4" style="color: #FFC72C;">
+          KB스타즈
+        </h1>
+        <p class="text-slate-200 text-sm md:text-base mb-6">
+          KBL KB스타즈의 시즌별 관중수 데이터 분석
+        </p>
+      </div>
+
+      <!-- KB스타즈 시즌별 관중수 차트 -->
+      <div class="mb-10">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-sm" style="color: #FFC72C;">시즌별 관중수</h3>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="text-slate-400">기간 선택:</span>
+            <select id="kbStartSeason" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-slate-200" style="color: #FFC72C;">
+              <!-- JavaScript로 동적 생성 -->
+            </select>
+            <span class="text-slate-400">~</span>
+            <select id="kbEndSeason" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-slate-200" style="color: #FFC72C;">
+              <!-- JavaScript로 동적 생성 -->
+            </select>
+            <button id="kbApplyRange" class="px-3 py-1 rounded bg-white/10 hover:bg-white/20 border border-white/20 text-slate-200 transition">
+              적용
+            </button>
+          </div>
+        </div>
+        <canvas id="kbStarsChart" height="200"></canvas>
+      </div>
+
+      <!-- KB스타즈 데이터 카드 -->
+      <div class="grid md:grid-cols-4 gap-4 mb-10">
+        <div class="bg-white/5 rounded-3xl p-5 border-2" style="border-color: #FFC72C;">
+          <p class="text-xs text-slate-400 mb-2">최고 관중수 시즌</p>
+          <p class="text-2xl font-extrabold mb-1" id="kbMaxSeason" style="color: #FFC72C;">-</p>
+          <p class="text-xs text-slate-300" id="kbMaxSeasonLabel">-</p>
+        </div>
+        <div class="bg-white/5 rounded-3xl p-5 border-2" style="border-color: #FFC72C;">
+          <p class="text-xs text-slate-400 mb-2">최근 시즌 관중수</p>
+          <p class="text-2xl font-extrabold mb-1" id="kbLatestSeason" style="color: #FFC72C;">-</p>
+          <p class="text-xs text-slate-300" id="kbLatestSeasonLabel">-</p>
+        </div>
+        <div class="bg-white/5 rounded-3xl p-5 border-2" style="border-color: #FFC72C;">
+          <p class="text-xs text-slate-400 mb-2">전체 평균 관중수</p>
+          <p class="text-2xl font-extrabold mb-1" id="kbTotalAvg" style="color: #FFC72C;">-</p>
+          <p class="text-xs text-slate-300">전체 시즌</p>
+        </div>
+        <div class="bg-white/5 rounded-3xl p-5 border-2 border-dashed" style="border-color: #FCD34D;">
+          <p class="text-xs text-slate-400 mb-2">선택 기간 평균</p>
+          <p class="text-2xl font-extrabold mb-1" id="kbSelectedAvg" style="color: #FCD34D;">-</p>
+          <p class="text-xs text-slate-300" id="kbSelectedRange">기간 선택 필요</p>
+        </div>
+      </div>
+
+      <!-- KB스타즈 상세 데이터 테이블 -->
+      <div class="bg-white/5 rounded-3xl p-6">
+        <h3 class="font-semibold mb-4 text-sm" style="color: #FFC72C;">시즌별 상세 데이터</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-white/10">
+                <th class="text-left py-3 px-4" style="color: #FFC72C;">시즌</th>
+                <th class="text-right py-3 px-4" style="color: #FFC72C;">관중수</th>
+              </tr>
+            </thead>
+            <tbody id="kbStarsTableBody" class="text-slate-200">
+              <!-- JavaScript로 동적 생성 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SSG 랜더스 섹션 -->
+    <section id="ssglanders" class="max-w-6xl mx-auto px-4 py-16 border-t border-white/10">
+      <div class="mb-12">
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-4" style="color: #C8102E;">
+          SSG 랜더스
+        </h1>
+        <p class="text-slate-200 text-sm md:text-base mb-6">
+          KBO 리그 SSG 랜더스의 연도별 및 요일별 관중수 데이터 분석
+        </p>
+      </div>
+
+      <!-- SSG 랜더스 연도별 총 관중수 차트 -->
+      <div class="mb-10">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-sm" style="color: #C8102E;">연도별 총 관중수</h3>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="text-slate-400">기간 선택:</span>
+            <select id="ssgStartYear" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-slate-200" style="color: #C8102E;">
+              <!-- JavaScript로 동적 생성 -->
+            </select>
+            <span class="text-slate-400">~</span>
+            <select id="ssgEndYear" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-slate-200" style="color: #C8102E;">
+              <!-- JavaScript로 동적 생성 -->
+            </select>
+            <button id="ssgApplyRange" class="px-3 py-1 rounded bg-white/10 hover:bg-white/20 border border-white/20 text-slate-200 transition">
+              적용
+            </button>
+          </div>
+        </div>
+        <canvas id="ssgTotalChart" height="200"></canvas>
+      </div>
+
+      <!-- SSG 랜더스 연도별 경기당 평균 차트 -->
+      <div class="mb-10">
+        <h3 class="font-semibold mb-3 text-sm" style="color: #C8102E;">연도별 경기당 평균 관중수</h3>
+        <canvas id="ssgAvgChart" height="200"></canvas>
+      </div>
+
+      <!-- SSG 랜더스 요일별 평균 관중수 차트 -->
+      <div class="mb-10">
+        <h3 class="font-semibold mb-3 text-sm" style="color: #C8102E;">평일 vs 주말 평균 관중수 (연도별 비교)</h3>
+        <canvas id="ssgWeekdayChart" height="250"></canvas>
+      </div>
+
+      <!-- SSG 랜더스 데이터 카드 -->
+      <div class="grid md:grid-cols-5 gap-4 mb-10">
+        <div class="bg-white/5 rounded-3xl p-5 border-2" style="border-color: #C8102E;">
+          <p class="text-xs text-slate-400 mb-2">최고 총 관중수</p>
+          <p class="text-2xl font-extrabold mb-1" id="ssgMaxTotal" style="color: #C8102E;">-</p>
+          <p class="text-xs text-slate-300" id="ssgMaxTotalYear">-</p>
+        </div>
+        <div class="bg-white/5 rounded-3xl p-5 border-2" style="border-color: #C8102E;">
+          <p class="text-xs text-slate-400 mb-2">최고 경기당 평균</p>
+          <p class="text-2xl font-extrabold mb-1" id="ssgMaxAvg" style="color: #C8102E;">-</p>
+          <p class="text-xs text-slate-300" id="ssgMaxAvgYear">-</p>
+        </div>
+        <div class="bg-white/5 rounded-3xl p-5 border-2" style="border-color: #C8102E;">
+          <p class="text-xs text-slate-400 mb-2">전체 시즌 총 관중</p>
+          <p class="text-2xl font-extrabold mb-1" id="ssgTotalAttendance" style="color: #C8102E;">-</p>
+          <p class="text-xs text-slate-300">전체 시즌</p>
+        </div>
+        <div class="bg-white/5 rounded-3xl p-5 border-2" style="border-color: #C8102E;">
+          <p class="text-xs text-slate-400 mb-2">전체 시즌 경기당 평균</p>
+          <p class="text-2xl font-extrabold mb-1" id="ssgTotalAvg" style="color: #C8102E;">-</p>
+          <p class="text-xs text-slate-300">전체 시즌</p>
+        </div>
+        <div class="bg-white/5 rounded-3xl p-5 border-2 border-dashed" style="border-color: #F87171;">
+          <p class="text-xs text-slate-400 mb-2">선택 기간 평균</p>
+          <p class="text-2xl font-extrabold mb-1" id="ssgSelectedAvg" style="color: #F87171;">-</p>
+          <p class="text-xs text-slate-300" id="ssgSelectedRange">기간 선택 필요</p>
+        </div>
+      </div>
+
+      <!-- SSG 랜더스 상세 데이터 테이블 -->
+      <div class="bg-white/5 rounded-3xl p-6">
+        <h3 class="font-semibold mb-4 text-sm" style="color: #C8102E;">연도별 상세 데이터</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-white/10">
+                <th class="text-left py-3 px-4" style="color: #C8102E;">연도</th>
+                <th class="text-right py-3 px-4" style="color: #C8102E;">총 관중수</th>
+                <th class="text-right py-3 px-4" style="color: #C8102E;">경기당 평균</th>
+                <th class="text-right py-3 px-4" style="color: #C8102E;">화</th>
+                <th class="text-right py-3 px-4" style="color: #C8102E;">수</th>
+                <th class="text-right py-3 px-4" style="color: #C8102E;">목</th>
+                <th class="text-right py-3 px-4" style="color: #C8102E;">금</th>
+                <th class="text-right py-3 px-4" style="color: #C8102E;">토</th>
+                <th class="text-right py-3 px-4" style="color: #C8102E;">일</th>
+              </tr>
+            </thead>
+            <tbody id="ssgTableBody" class="text-slate-200">
+              <!-- JavaScript로 동적 생성 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   </div>
 
   <!-- Chart.js 초기화 스크립트 -->

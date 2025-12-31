@@ -802,3 +802,790 @@ fetch("season_trends.json")
     console.error("JSON 로드 실패 (trends):", err);
   });
 
+// 케이스스터디 화면 전환 로직
+const mainContainer = document.getElementById("mainContainer");
+const caseStudyContainer = document.getElementById("caseStudyContainer");
+const navLinks = document.querySelectorAll(".nav-link");
+const caseStudyLink = document.querySelector('a[href="#casestudy"]');
+const backToMainBtn = document.getElementById("backToMainBtn");
+
+// 케이스스터디 링크 클릭 시 화면 전환
+if (caseStudyLink) {
+  caseStudyLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (mainContainer) mainContainer.classList.add("hidden");
+    if (caseStudyContainer) caseStudyContainer.classList.remove("hidden");
+    window.scrollTo(0, 0);
+  });
+}
+
+// 메인으로 돌아가기 버튼
+if (backToMainBtn) {
+  backToMainBtn.addEventListener("click", () => {
+    if (mainContainer) mainContainer.classList.remove("hidden");
+    if (caseStudyContainer) caseStudyContainer.classList.add("hidden");
+    window.scrollTo(0, 0);
+  });
+}
+
+// 전북현대 데이터
+const jeonbukData = [
+  { season: "24시즌", attendance: 295642, games: 19 },
+  { season: "23시즌", attendance: 238759, games: 19 },
+  { season: "22시즌", attendance: 114328, games: 19 },
+  { season: "21시즌", attendance: 82471, games: 19 },
+  { season: "20시즌", attendance: 16808, games: 14 },
+  { season: "19시즌", attendance: 278738, games: 20 },
+  { season: "18시즌", attendance: 226224, games: 19 },
+  { season: "17시즌", attendance: 221579, games: 19 },
+  { season: "16시즌", attendance: 318921, games: 19 },
+  { season: "15시즌", attendance: 330856, games: 19 },
+  { season: "14시즌", attendance: 249954, games: 19 },
+  { season: "13시즌", attendance: 193060, games: 19 }
+];
+
+// 전북현대 차트 초기화
+let jeonbukChart = null;
+const jeonbukCtx = document.getElementById("jeonbukChart");
+if (jeonbukCtx) {
+  const jeonbukLabels = jeonbukData.map(d => d.season);
+  const jeonbukValues = jeonbukData.map(d => d.attendance);
+  const jeonbukAvgPerGame = jeonbukData.map(d => Math.round(d.attendance / d.games));
+
+  jeonbukChart = new Chart(jeonbukCtx, {
+    type: "bar",
+    data: {
+      labels: jeonbukLabels,
+      datasets: [
+        {
+          label: "총 관중수",
+          data: jeonbukValues,
+          backgroundColor: "#00A651",
+          borderColor: "#00A651",
+          borderWidth: 2,
+          yAxisID: "y"
+        },
+        {
+          label: "경기당 평균 관중수",
+          data: jeonbukAvgPerGame,
+          type: "line",
+          borderColor: "#7DD3FC",
+          backgroundColor: "rgba(125, 211, 252, 0.2)",
+          borderWidth: 2,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          yAxisID: "y1"
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          labels: { color: "#E5E7EB", font: { size: 11 } }
+        },
+        tooltip: {
+          callbacks: {
+            afterLabel: function(context) {
+              const index = context.dataIndex;
+              const data = jeonbukData[index];
+              if (context.datasetIndex === 0) {
+                return `경기수: ${data.games}경기\n경기당 평균: ${Math.round(data.attendance / data.games).toLocaleString()}명`;
+              }
+              return `총 관중수: ${data.attendance.toLocaleString()}명`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#E5E7EB", font: { size: 10 } },
+          grid: { color: "rgba(148, 163, 184, 0.2)" }
+        },
+        y: {
+          type: "linear",
+          display: true,
+          position: "left",
+          ticks: { color: "#00A651", font: { size: 10 } },
+          grid: { color: "rgba(148, 163, 184, 0.2)" },
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "총 관중수",
+            color: "#00A651"
+          }
+        },
+        y1: {
+          type: "linear",
+          display: true,
+          position: "right",
+          ticks: { color: "#7DD3FC", font: { size: 10 } },
+          grid: { drawOnChartArea: false },
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "경기당 평균",
+            color: "#7DD3FC"
+          }
+        }
+      }
+    }
+  });
+}
+
+// 전북현대 테이블 생성
+const jeonbukTableBody = document.getElementById("jeonbukTableBody");
+if (jeonbukTableBody) {
+  jeonbukTableBody.innerHTML = "";
+  jeonbukData.forEach(data => {
+    const avgPerGame = Math.round(data.attendance / data.games);
+    const row = document.createElement("tr");
+    row.className = "border-b border-white/5 hover:bg-white/5";
+    row.innerHTML = `
+      <td class="py-3 px-4 font-semibold">${data.season}</td>
+      <td class="py-3 px-4 text-right">${data.attendance.toLocaleString()}명</td>
+      <td class="py-3 px-4 text-right">${data.games}경기</td>
+      <td class="py-3 px-4 text-right" style="color: #00A651;">${avgPerGame.toLocaleString()}명</td>
+    `;
+    jeonbukTableBody.appendChild(row);
+  });
+}
+
+// 전북현대 통계 업데이트
+function updateJeonbukStats() {
+  // 최고 관중수
+  const maxData = jeonbukData.reduce((max, d) => d.attendance > max.attendance ? d : max, jeonbukData[0]);
+  const maxSeasonEl = document.getElementById("jeonbukMaxSeason");
+  const maxSeasonLabelEl = document.getElementById("jeonbukMaxSeasonLabel");
+  if (maxSeasonEl) maxSeasonEl.textContent = `${maxData.attendance.toLocaleString()}명`;
+  if (maxSeasonLabelEl) maxSeasonLabelEl.textContent = `${maxData.season} (${maxData.games}경기)`;
+
+  // 최근 시즌
+  const latestData = jeonbukData[jeonbukData.length - 1];
+  const latestSeasonEl = document.getElementById("jeonbukLatestSeason");
+  const latestSeasonLabelEl = document.getElementById("jeonbukLatestSeasonLabel");
+  if (latestSeasonEl) latestSeasonEl.textContent = `${latestData.attendance.toLocaleString()}명`;
+  if (latestSeasonLabelEl) latestSeasonLabelEl.textContent = `${latestData.season} (${latestData.games}경기)`;
+
+  // 전체 평균 계산
+  const totalAvg = Math.round(jeonbukData.reduce((sum, d) => sum + d.attendance, 0) / jeonbukData.length);
+  const totalAvgEl = document.getElementById("jeonbukTotalAvg");
+  if (totalAvgEl) totalAvgEl.textContent = `${totalAvg.toLocaleString()}명`;
+}
+
+// 전북현대 기간 선택 기능
+const jeonbukStartSeasonSelect = document.getElementById("jeonbukStartSeason");
+const jeonbukEndSeasonSelect = document.getElementById("jeonbukEndSeason");
+const jeonbukApplyRangeBtn = document.getElementById("jeonbukApplyRange");
+const jeonbukSelectedAvgEl = document.getElementById("jeonbukSelectedAvg");
+const jeonbukSelectedRangeEl = document.getElementById("jeonbukSelectedRange");
+
+// 시즌 선택 드롭다운 생성
+if (jeonbukStartSeasonSelect && jeonbukEndSeasonSelect) {
+  jeonbukData.forEach((data, index) => {
+    const option1 = document.createElement("option");
+    option1.value = index;
+    option1.textContent = data.season;
+    jeonbukStartSeasonSelect.appendChild(option1);
+
+    const option2 = document.createElement("option");
+    option2.value = index;
+    option2.textContent = data.season;
+    jeonbukEndSeasonSelect.appendChild(option2);
+  });
+
+  // 기본값 설정 (전체 범위)
+  jeonbukStartSeasonSelect.value = 0;
+  jeonbukEndSeasonSelect.value = jeonbukData.length - 1;
+}
+
+// 전북현대 기간 선택 적용 함수
+function applyJeonbukSeasonRange() {
+  if (!jeonbukStartSeasonSelect || !jeonbukEndSeasonSelect) return;
+
+  const startIndex = parseInt(jeonbukStartSeasonSelect.value);
+  const endIndex = parseInt(jeonbukEndSeasonSelect.value);
+
+  if (startIndex > endIndex) {
+    alert("시작 시즌이 끝 시즌보다 늦을 수 없습니다.");
+    return;
+  }
+
+  const selectedData = jeonbukData.slice(startIndex, endIndex + 1);
+  const avg = Math.round(selectedData.reduce((sum, d) => sum + d.attendance, 0) / selectedData.length);
+  const startSeason = jeonbukData[startIndex].season;
+  const endSeason = jeonbukData[endIndex].season;
+
+  // 선택 기간 평균 표시
+  if (jeonbukSelectedAvgEl) jeonbukSelectedAvgEl.textContent = `${avg.toLocaleString()}명`;
+  if (jeonbukSelectedRangeEl) jeonbukSelectedRangeEl.textContent = `${startSeason} ~ ${endSeason} (${selectedData.length}시즌)`;
+
+  // 차트에서 선택된 기간 강조
+  if (jeonbukChart) {
+    const colors = jeonbukData.map((d, index) => 
+      (index >= startIndex && index <= endIndex) ? "#34D399" : "#00A651"
+    );
+    jeonbukChart.data.datasets[0].backgroundColor = colors;
+    jeonbukChart.data.datasets[0].borderColor = colors;
+    jeonbukChart.update();
+  }
+}
+
+// 전북현대 적용 버튼 클릭 이벤트
+if (jeonbukApplyRangeBtn) {
+  jeonbukApplyRangeBtn.addEventListener("click", applyJeonbukSeasonRange);
+}
+
+// 전북현대 초기 통계 업데이트
+updateJeonbukStats();
+
+// KB스타즈 데이터
+const kbStarsData = [
+  { season: "2011-2012", attendance: 43086 },
+  { season: "12-13", attendance: 29616 },
+  { season: "13-14", attendance: 39372 },
+  { season: "14-15", attendance: 39234 },
+  { season: "15-16", attendance: 36914 },
+  { season: "16-17", attendance: 27578 },
+  { season: "17-18", attendance: 30598 },
+  { season: "18-19", attendance: 37534 },
+  { season: "19-20", attendance: 22612 },
+  { season: "20-21", attendance: 2282 },
+  { season: "21-22", attendance: 15396 },
+  { season: "22-23", attendance: 21006 },
+  { season: "23-24", attendance: 36118 },
+  { season: "24-25", attendance: 32895 }
+];
+
+// KB스타즈 차트 초기화
+let kbStarsChart = null;
+const kbStarsCtx = document.getElementById("kbStarsChart");
+if (kbStarsCtx) {
+  const kbStarsLabels = kbStarsData.map(d => d.season);
+  const kbStarsValues = kbStarsData.map(d => d.attendance);
+
+  kbStarsChart = new Chart(kbStarsCtx, {
+    type: "bar",
+    data: {
+      labels: kbStarsLabels,
+      datasets: [{
+        label: "관중수",
+        data: kbStarsValues,
+        backgroundColor: "#FFC72C",
+        borderColor: "#FFC72C",
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          labels: { color: "#E5E7EB", font: { size: 11 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `관중수: ${context.parsed.y.toLocaleString()}명`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#E5E7EB", font: { size: 10 } },
+          grid: { color: "rgba(148, 163, 184, 0.2)" }
+        },
+        y: {
+          ticks: { color: "#E5E7EB", font: { size: 10 } },
+          grid: { color: "rgba(148, 163, 184, 0.2)" },
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "관중수",
+            color: "#FFC72C"
+          }
+        }
+      }
+    }
+  });
+}
+
+// KB스타즈 통계 계산 및 표시
+function updateKBStarsStats() {
+  // 최고 관중수
+  const maxData = kbStarsData.reduce((max, d) => d.attendance > max.attendance ? d : max, kbStarsData[0]);
+  const maxSeasonEl = document.getElementById("kbMaxSeason");
+  const maxSeasonLabelEl = document.getElementById("kbMaxSeasonLabel");
+  if (maxSeasonEl) maxSeasonEl.textContent = `${maxData.attendance.toLocaleString()}명`;
+  if (maxSeasonLabelEl) maxSeasonLabelEl.textContent = maxData.season;
+
+  // 최근 시즌
+  const latestData = kbStarsData[kbStarsData.length - 1];
+  const latestSeasonEl = document.getElementById("kbLatestSeason");
+  const latestSeasonLabelEl = document.getElementById("kbLatestSeasonLabel");
+  if (latestSeasonEl) latestSeasonEl.textContent = `${latestData.attendance.toLocaleString()}명`;
+  if (latestSeasonLabelEl) latestSeasonLabelEl.textContent = latestData.season;
+
+  // 전체 평균
+  const totalAvg = Math.round(kbStarsData.reduce((sum, d) => sum + d.attendance, 0) / kbStarsData.length);
+  const totalAvgEl = document.getElementById("kbTotalAvg");
+  if (totalAvgEl) totalAvgEl.textContent = `${totalAvg.toLocaleString()}명`;
+}
+
+// KB스타즈 테이블 생성
+const kbStarsTableBody = document.getElementById("kbStarsTableBody");
+if (kbStarsTableBody) {
+  kbStarsTableBody.innerHTML = "";
+  kbStarsData.forEach(data => {
+    const row = document.createElement("tr");
+    row.className = "border-b border-white/5 hover:bg-white/5";
+    row.innerHTML = `
+      <td class="py-3 px-4 font-semibold">${data.season}</td>
+      <td class="py-3 px-4 text-right" style="color: #FFC72C;">${data.attendance.toLocaleString()}명</td>
+    `;
+    kbStarsTableBody.appendChild(row);
+  });
+}
+
+// KB스타즈 기간 선택 기능
+const kbStartSeasonSelect = document.getElementById("kbStartSeason");
+const kbEndSeasonSelect = document.getElementById("kbEndSeason");
+const kbApplyRangeBtn = document.getElementById("kbApplyRange");
+const kbSelectedAvgEl = document.getElementById("kbSelectedAvg");
+const kbSelectedRangeEl = document.getElementById("kbSelectedRange");
+
+// 시즌 선택 드롭다운 생성
+if (kbStartSeasonSelect && kbEndSeasonSelect) {
+  kbStarsData.forEach((data, index) => {
+    const option1 = document.createElement("option");
+    option1.value = index;
+    option1.textContent = data.season;
+    kbStartSeasonSelect.appendChild(option1);
+
+    const option2 = document.createElement("option");
+    option2.value = index;
+    option2.textContent = data.season;
+    kbEndSeasonSelect.appendChild(option2);
+  });
+
+  // 기본값 설정 (전체 범위)
+  kbStartSeasonSelect.value = 0;
+  kbEndSeasonSelect.value = kbStarsData.length - 1;
+}
+
+// 기간 선택 적용 함수
+function applyKBSeasonRange() {
+  if (!kbStartSeasonSelect || !kbEndSeasonSelect) return;
+
+  const startIndex = parseInt(kbStartSeasonSelect.value);
+  const endIndex = parseInt(kbEndSeasonSelect.value);
+
+  if (startIndex > endIndex) {
+    alert("시작 시즌이 끝 시즌보다 늦을 수 없습니다.");
+    return;
+  }
+
+  const selectedData = kbStarsData.slice(startIndex, endIndex + 1);
+  const avg = Math.round(selectedData.reduce((sum, d) => sum + d.attendance, 0) / selectedData.length);
+  const startSeason = kbStarsData[startIndex].season;
+  const endSeason = kbStarsData[endIndex].season;
+
+  // 선택 기간 평균 표시
+  if (kbSelectedAvgEl) kbSelectedAvgEl.textContent = `${avg.toLocaleString()}명`;
+  if (kbSelectedRangeEl) kbSelectedRangeEl.textContent = `${startSeason} ~ ${endSeason} (${selectedData.length}시즌)`;
+
+  // 차트에서 선택된 기간 강조
+  if (kbStarsChart) {
+    const colors = kbStarsData.map((d, index) => 
+      (index >= startIndex && index <= endIndex) ? "#FCD34D" : "#FFC72C"
+    );
+    kbStarsChart.data.datasets[0].backgroundColor = colors;
+    kbStarsChart.data.datasets[0].borderColor = colors;
+    kbStarsChart.update();
+  }
+}
+
+// 적용 버튼 클릭 이벤트
+if (kbApplyRangeBtn) {
+  kbApplyRangeBtn.addEventListener("click", applyKBSeasonRange);
+}
+
+// 초기 통계 업데이트
+updateKBStarsStats();
+
+// SSG 랜더스 데이터
+const ssgData = [
+  {
+    year: "2021년",
+    total: 105534,
+    avgPerGame: 2574,
+    weekdays: {
+      tue: null,
+      wed: null,
+      thu: null,
+      fri: null,
+      sat: null,
+      sun: null
+    }
+  },
+  {
+    year: "2022년",
+    total: 981546,
+    avgPerGame: 13633,
+    weekdays: {
+      tue: 7654,
+      wed: 8120,
+      thu: 8410,
+      fri: 13850,
+      sat: 19850,
+      sun: 17200
+    }
+  },
+  {
+    year: "2023년",
+    total: 1068211,
+    avgPerGame: 14836,
+    weekdays: {
+      tue: 9215,
+      wed: 9840,
+      thu: 11353,
+      fri: 14920,
+      sat: 21500,
+      sun: 18950
+    }
+  },
+  {
+    year: "2024년",
+    total: 1143773,
+    avgPerGame: 15886,
+    weekdays: {
+      tue: 10872,
+      wed: 11250,
+      thu: 13311,
+      fri: 16550,
+      sat: 22100,
+      sun: 20450
+    }
+  },
+  {
+    year: "2025년",
+    total: 1281093,
+    avgPerGame: 17793,
+    weekdays: {
+      tue: 12940,
+      wed: 13210,
+      thu: 14470,
+      fri: 18920,
+      sat: 22950,
+      sun: 22600
+    }
+  }
+];
+
+// SSG 랜더스 연도별 총 관중수 차트
+let ssgTotalChart = null;
+const ssgTotalCtx = document.getElementById("ssgTotalChart");
+if (ssgTotalCtx) {
+  const labels = ssgData.map(d => d.year);
+  const values = ssgData.map(d => d.total);
+
+  ssgTotalChart = new Chart(ssgTotalCtx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "총 관중수",
+        data: values,
+        backgroundColor: "#C8102E",
+        borderColor: "#C8102E",
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          labels: { color: "#E5E7EB", font: { size: 11 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `총 관중수: ${context.parsed.y.toLocaleString()}명`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#E5E7EB", font: { size: 10 } },
+          grid: { color: "rgba(148, 163, 184, 0.2)" }
+        },
+        y: {
+          ticks: { color: "#E5E7EB", font: { size: 10 } },
+          grid: { color: "rgba(148, 163, 184, 0.2)" },
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "총 관중수",
+            color: "#C8102E"
+          }
+        }
+      }
+    }
+  });
+}
+
+// SSG 랜더스 연도별 경기당 평균 차트
+const ssgAvgCtx = document.getElementById("ssgAvgChart");
+if (ssgAvgCtx) {
+  const labels = ssgData.map(d => d.year);
+  const values = ssgData.map(d => d.avgPerGame);
+
+  new Chart(ssgAvgCtx, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "경기당 평균 관중수",
+        data: values,
+        borderColor: "#C8102E",
+        backgroundColor: "rgba(200, 16, 46, 0.1)",
+        borderWidth: 3,
+        tension: 0.3,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          labels: { color: "#E5E7EB", font: { size: 11 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `경기당 평균: ${context.parsed.y.toLocaleString()}명`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#E5E7EB", font: { size: 10 } },
+          grid: { color: "rgba(148, 163, 184, 0.2)" }
+        },
+        y: {
+          ticks: { color: "#E5E7EB", font: { size: 10 } },
+          grid: { color: "rgba(148, 163, 184, 0.2)" },
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "경기당 평균 관중수",
+            color: "#C8102E"
+          }
+        }
+      }
+    }
+  });
+}
+
+// SSG 랜더스 요일별 평균 관중수 차트 (평일 vs 주말)
+const ssgWeekdayCtx = document.getElementById("ssgWeekdayChart");
+if (ssgWeekdayCtx) {
+  const weekdayLabels = ["평일 (화~목)", "주말 (금~일)"];
+  const years = ssgData.filter(d => d.weekdays.tue !== null).map(d => d.year);
+  
+  const datasets = years.map((year, yearIndex) => {
+    const dataIndex = ssgData.findIndex(d => d.year === year);
+    const data = ssgData[dataIndex];
+    
+    // 평일 평균 (화, 수, 목)
+    const weekdayAvg = Math.round((data.weekdays.tue + data.weekdays.wed + data.weekdays.thu) / 3);
+    // 주말 평균 (금, 토, 일)
+    const weekendAvg = Math.round((data.weekdays.fri + data.weekdays.sat + data.weekdays.sun) / 3);
+    
+    const colors = ["#EF4444", "#F87171", "#FCA5A5", "#FECACA", "#FEE2E2"];
+    return {
+      label: year,
+      data: [weekdayAvg, weekendAvg],
+      borderColor: colors[yearIndex % colors.length],
+      backgroundColor: colors[yearIndex % colors.length] + "40",
+      borderWidth: 2,
+      tension: 0.3,
+      pointRadius: 5,
+      pointHoverRadius: 7
+    };
+  });
+
+  new Chart(ssgWeekdayCtx, {
+    type: "bar",
+    data: {
+      labels: weekdayLabels,
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          labels: { color: "#E5E7EB", font: { size: 11 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: ${context.parsed.y.toLocaleString()}명`;
+            },
+            afterLabel: function(context) {
+              const yearIndex = context.datasetIndex;
+              const dataIndex = ssgData.findIndex(d => d.year === years[yearIndex]);
+              const data = ssgData[dataIndex];
+              
+              if (context.dataIndex === 0) {
+                // 평일 상세 정보
+                return `화: ${data.weekdays.tue.toLocaleString()}명\n수: ${data.weekdays.wed.toLocaleString()}명\n목: ${data.weekdays.thu.toLocaleString()}명`;
+              } else {
+                // 주말 상세 정보
+                return `금: ${data.weekdays.fri.toLocaleString()}명\n토: ${data.weekdays.sat.toLocaleString()}명\n일: ${data.weekdays.sun.toLocaleString()}명`;
+              }
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#E5E7EB", font: { size: 10 } },
+          grid: { color: "rgba(148, 163, 184, 0.2)" }
+        },
+        y: {
+          ticks: { color: "#E5E7EB", font: { size: 10 } },
+          grid: { color: "rgba(148, 163, 184, 0.2)" },
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "평균 관중수",
+            color: "#C8102E"
+          }
+        }
+      }
+    }
+  });
+}
+
+// SSG 랜더스 통계 업데이트
+function updateSSGStats() {
+  // 최고 총 관중수
+  const maxTotal = ssgData.reduce((max, d) => d.total > max.total ? d : max, ssgData[0]);
+  const maxTotalEl = document.getElementById("ssgMaxTotal");
+  const maxTotalYearEl = document.getElementById("ssgMaxTotalYear");
+  if (maxTotalEl) maxTotalEl.textContent = `${maxTotal.total.toLocaleString()}명`;
+  if (maxTotalYearEl) maxTotalYearEl.textContent = maxTotal.year;
+
+  // 최고 경기당 평균
+  const maxAvg = ssgData.reduce((max, d) => d.avgPerGame > max.avgPerGame ? d : max, ssgData[0]);
+  const maxAvgEl = document.getElementById("ssgMaxAvg");
+  const maxAvgYearEl = document.getElementById("ssgMaxAvgYear");
+  if (maxAvgEl) maxAvgEl.textContent = `${maxAvg.avgPerGame.toLocaleString()}명`;
+  if (maxAvgYearEl) maxAvgYearEl.textContent = maxAvg.year;
+
+  // 전체 시즌 총 관중
+  const totalAttendance = ssgData.reduce((sum, d) => sum + d.total, 0);
+  const totalAttendanceEl = document.getElementById("ssgTotalAttendance");
+  if (totalAttendanceEl) totalAttendanceEl.textContent = `${totalAttendance.toLocaleString()}명`;
+
+  // 전체 시즌 경기당 평균
+  const totalAvg = Math.round(ssgData.reduce((sum, d) => sum + d.avgPerGame, 0) / ssgData.length);
+  const totalAvgEl = document.getElementById("ssgTotalAvg");
+  if (totalAvgEl) totalAvgEl.textContent = `${totalAvg.toLocaleString()}명`;
+}
+
+// SSG 랜더스 테이블 생성
+const ssgTableBody = document.getElementById("ssgTableBody");
+if (ssgTableBody) {
+  ssgTableBody.innerHTML = "";
+  ssgData.forEach(data => {
+    const row = document.createElement("tr");
+    row.className = "border-b border-white/5 hover:bg-white/5";
+    row.innerHTML = `
+      <td class="py-3 px-4 font-semibold">${data.year}</td>
+      <td class="py-3 px-4 text-right" style="color: #C8102E;">${data.total.toLocaleString()}명</td>
+      <td class="py-3 px-4 text-right" style="color: #C8102E;">${data.avgPerGame.toLocaleString()}명</td>
+      <td class="py-3 px-4 text-right">${data.weekdays.tue ? data.weekdays.tue.toLocaleString() : '-'}</td>
+      <td class="py-3 px-4 text-right">${data.weekdays.wed ? data.weekdays.wed.toLocaleString() : '-'}</td>
+      <td class="py-3 px-4 text-right">${data.weekdays.thu ? data.weekdays.thu.toLocaleString() : '-'}</td>
+      <td class="py-3 px-4 text-right">${data.weekdays.fri ? data.weekdays.fri.toLocaleString() : '-'}</td>
+      <td class="py-3 px-4 text-right">${data.weekdays.sat ? data.weekdays.sat.toLocaleString() : '-'}</td>
+      <td class="py-3 px-4 text-right">${data.weekdays.sun ? data.weekdays.sun.toLocaleString() : '-'}</td>
+    `;
+    ssgTableBody.appendChild(row);
+  });
+}
+
+// SSG 랜더스 기간 선택 기능
+const ssgStartYearSelect = document.getElementById("ssgStartYear");
+const ssgEndYearSelect = document.getElementById("ssgEndYear");
+const ssgApplyRangeBtn = document.getElementById("ssgApplyRange");
+const ssgSelectedAvgEl = document.getElementById("ssgSelectedAvg");
+const ssgSelectedRangeEl = document.getElementById("ssgSelectedRange");
+
+// 연도 선택 드롭다운 생성
+if (ssgStartYearSelect && ssgEndYearSelect) {
+  ssgData.forEach((data, index) => {
+    const option1 = document.createElement("option");
+    option1.value = index;
+    option1.textContent = data.year;
+    ssgStartYearSelect.appendChild(option1);
+
+    const option2 = document.createElement("option");
+    option2.value = index;
+    option2.textContent = data.year;
+    ssgEndYearSelect.appendChild(option2);
+  });
+
+  // 기본값 설정 (전체 범위)
+  ssgStartYearSelect.value = 0;
+  ssgEndYearSelect.value = ssgData.length - 1;
+}
+
+// SSG 랜더스 기간 선택 적용 함수
+function applySSGYearRange() {
+  if (!ssgStartYearSelect || !ssgEndYearSelect) return;
+
+  const startIndex = parseInt(ssgStartYearSelect.value);
+  const endIndex = parseInt(ssgEndYearSelect.value);
+
+  if (startIndex > endIndex) {
+    alert("시작 연도가 끝 연도보다 늦을 수 없습니다.");
+    return;
+  }
+
+  const selectedData = ssgData.slice(startIndex, endIndex + 1);
+  // 경기당 평균의 평균 계산
+  const avg = Math.round(selectedData.reduce((sum, d) => sum + d.avgPerGame, 0) / selectedData.length);
+  const startYear = ssgData[startIndex].year;
+  const endYear = ssgData[endIndex].year;
+
+  // 선택 기간 평균 표시
+  if (ssgSelectedAvgEl) ssgSelectedAvgEl.textContent = `${avg.toLocaleString()}명`;
+  if (ssgSelectedRangeEl) ssgSelectedRangeEl.textContent = `${startYear} ~ ${endYear} (${selectedData.length}년)`;
+
+  // 차트에서 선택된 기간 강조
+  if (ssgTotalChart) {
+    const colors = ssgData.map((d, index) => 
+      (index >= startIndex && index <= endIndex) ? "#F87171" : "#C8102E"
+    );
+    ssgTotalChart.data.datasets[0].backgroundColor = colors;
+    ssgTotalChart.data.datasets[0].borderColor = colors;
+    ssgTotalChart.update();
+  }
+}
+
+// SSG 랜더스 적용 버튼 클릭 이벤트
+if (ssgApplyRangeBtn) {
+  ssgApplyRangeBtn.addEventListener("click", applySSGYearRange);
+}
+
+// SSG 랜더스 통계 초기화
+updateSSGStats();
+
