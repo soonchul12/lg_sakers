@@ -195,5 +195,23 @@
       "avg_attendance": 3442,
       "game_count": 4
     }
+  },
+  "round_avg_2025_2026": {
+    "1라운드": {
+      "avg_attendance": 3704,
+      "game_count": 6
+    },
+    "2라운드": {
+      "avg_attendance": 3820,
+      "game_count": 3
+    },
+    "3라운드": {
+      "avg_attendance": 4448,
+      "game_count": 4
+    },
+    "4라운드": {
+      "avg_attendance": 3041,
+      "game_count": 1
+    }
   }
 }

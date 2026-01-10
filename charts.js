@@ -578,50 +578,112 @@ fetch("kbl_benchmark.json")
 fetch("season_trends.json")
   .then(res => res.json())
   .then(trendData => {
-    // 라운드별 관중수 패턴 차트 (2024-2025 시즌)
+    // 라운드별 관중수 패턴 차트 (2024-2025, 2025-2026 시즌 비교)
     const roundCtx = document.getElementById("roundChart");
-    if (roundCtx && trendData.round_avg_2024_2025) {
-      const rounds = Object.keys(trendData.round_avg_2024_2025).sort();
-      const roundLabels = rounds.map(r => r.replace('라운드', 'R'));
-      const values = rounds.map(r => trendData.round_avg_2024_2025[r].avg_attendance);
-      const gameCounts = rounds.map(r => trendData.round_avg_2024_2025[r].game_count);
+    if (roundCtx) {
+      // 2024-2025 시즌 데이터
+      const rounds2024 = trendData.round_avg_2024_2025 ? Object.keys(trendData.round_avg_2024_2025).sort() : [];
+      const values2024 = rounds2024.map(r => trendData.round_avg_2024_2025[r].avg_attendance);
+      const gameCounts2024 = rounds2024.map(r => trendData.round_avg_2024_2025[r].game_count);
       
+      // 2025-2026 시즌 데이터
+      const rounds2025 = trendData.round_avg_2025_2026 ? Object.keys(trendData.round_avg_2025_2026).sort() : [];
+      const values2025 = rounds2025.map(r => trendData.round_avg_2025_2026[r].avg_attendance);
+      const gameCounts2025 = rounds2025.map(r => trendData.round_avg_2025_2026[r].game_count);
+      
+      // 모든 라운드 통합 (두 시즌 모두 포함)
+      const allRounds = [...new Set([...rounds2024, ...rounds2025])].sort((a, b) => {
+        const numA = parseInt(a.replace('라운드', ''));
+        const numB = parseInt(b.replace('라운드', ''));
+        return numA - numB;
+      });
+      const roundLabels = allRounds.map(r => r.replace('라운드', 'R'));
+      
+      // 각 라운드별로 데이터 매핑 (없는 라운드는 null)
+      const data2024 = allRounds.map(r => {
+        const idx = rounds2024.indexOf(r);
+        return idx >= 0 ? values2024[idx] : null;
+      });
+      const data2025 = allRounds.map(r => {
+        const idx = rounds2025.indexOf(r);
+        return idx >= 0 ? values2025[idx] : null;
+      });
+      
+      // 게임 수 매핑
+      const gameCounts2024Mapped = allRounds.map(r => {
+        const idx = rounds2024.indexOf(r);
+        return idx >= 0 ? gameCounts2024[idx] : 0;
+      });
+      const gameCounts2025Mapped = allRounds.map(r => {
+        const idx = rounds2025.indexOf(r);
+        return idx >= 0 ? gameCounts2025[idx] : 0;
+      });
+
       // 시즌 평균 계산
-      const seasonAvg = trendData.season_trends["2024-2025"].total_avg;
-      
-      // 최고 관중수 라운드 강조를 위한 색상
-      const maxValue = Math.max(...values);
-      const colors = values.map(v => v === maxValue ? "#FFC72C" : "#94A3B8");
-      const borderColors = values.map(v => v === maxValue ? "#FFC72C" : "#64748B");
+      const seasonAvg2024 = trendData.season_trends["2024-2025"] ? trendData.season_trends["2024-2025"].total_avg : 0;
+      const seasonAvg2025 = trendData.season_trends["2025-2026"] ? trendData.season_trends["2025-2026"].total_avg : (trendData.round_avg_2025_2026 ? 
+        Math.round(Object.values(trendData.round_avg_2025_2026).reduce((sum, r) => sum + r.avg_attendance * r.game_count, 0) / 
+        Object.values(trendData.round_avg_2025_2026).reduce((sum, r) => sum + r.game_count, 0)) : 0);
 
       new Chart(roundCtx, {
         type: "bar",
         data: {
           labels: roundLabels,
-          datasets: [{
-            label: "평균 관중수",
-            data: values,
-            backgroundColor: colors,
-            borderColor: borderColors,
-            borderWidth: 2
-          }]
+          datasets: [
+            {
+              label: "2024-2025 시즌",
+              data: data2024,
+              backgroundColor: "rgba(255, 199, 44, 0.6)",
+              borderColor: "#FFC72C",
+              borderWidth: 2
+            },
+            {
+              label: "2025-2026 시즌",
+              data: data2025,
+              backgroundColor: "rgba(148, 163, 184, 0.6)",
+              borderColor: "#94A3B8",
+              borderWidth: 2
+            }
+          ]
         },
         options: {
           responsive: true,
           plugins: {
             legend: {
-              display: false
+              display: true,
+              labels: {
+                color: "#E5E7EB",
+                font: { size: 11 }
+              }
             },
             tooltip: {
               callbacks: {
                 title: function(context) {
-                  return `${rounds[context[0].dataIndex]} (${gameCounts[context[0].dataIndex]}경기)`;
+                  return `R${context[0].label}`;
+                },
+                label: function(context) {
+                  const datasetLabel = context.dataset.label;
+                  const value = context.parsed.y;
+                  const roundIdx = context.dataIndex;
+                  let gameCount = 0;
+                  if (datasetLabel === "2024-2025 시즌") {
+                    gameCount = gameCounts2024Mapped[roundIdx];
+                  } else {
+                    gameCount = gameCounts2025Mapped[roundIdx];
+                  }
+                  return `${datasetLabel}: ${value.toLocaleString()}명 (${gameCount}경기)`;
                 },
                 afterLabel: function(context) {
-                  const avg = seasonAvg;
-                  const diff = values[context.dataIndex] - avg;
-                  const diffPercent = ((diff / avg) * 100).toFixed(1);
-                  return `시즌 평균 대비: ${diff > 0 ? '+' : ''}${diff.toLocaleString()}명 (${diffPercent}%)`;
+                  const datasetLabel = context.dataset.label;
+                  const value = context.parsed.y;
+                  const roundIdx = context.dataIndex;
+                  const seasonAvg = datasetLabel === "2024-2025 시즌" ? seasonAvg2024 : seasonAvg2025;
+                  if (seasonAvg > 0 && value !== null) {
+                    const diff = value - seasonAvg;
+                    const diffPercent = ((diff / seasonAvg) * 100).toFixed(1);
+                    return `시즌 평균 대비: ${diff > 0 ? '+' : ''}${diff.toLocaleString()}명 (${diffPercent}%)`;
+                  }
+                  return '';
                 }
               }
             }

@@ -2,13 +2,18 @@ import pandas as pd
 import json
 from datetime import datetime
 
-df = pd.read_excel("lg_crowd.xlsx")
+df = pd.read_excel("lg_crowd.xlsx", engine='openpyxl')
 
 # all.xlsx에서 상대팀 정보 가져오기
-try:
-    all_df = pd.read_excel("all.xlsx")
-    print("✅ all.xlsx 파일을 읽었습니다. 상대팀 정보를 매칭합니다...")
-except FileNotFoundError:
+import os
+if os.path.exists("all.xlsx"):
+    try:
+        all_df = pd.read_excel("all.xlsx", engine='openpyxl')
+        print("✅ all.xlsx 파일을 읽었습니다. 상대팀 정보를 매칭합니다...")
+    except Exception as e:
+        all_df = None
+        print(f"⚠️  all.xlsx 파일을 읽을 수 없습니다: {e}. 상대팀 정보 없이 진행합니다.")
+else:
     all_df = None
     print("⚠️  all.xlsx 파일을 찾을 수 없습니다. 상대팀 정보 없이 진행합니다.")
 
