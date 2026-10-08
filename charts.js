@@ -1,317 +1,701 @@
-// 공통 옵션
-const commonOptions = {
-  responsive: true,
-  plugins: {
-    legend: {
-      labels: {
-        color: "#E5E7EB",
-        font: { size: 10 }
-      }
-    }
-  },
-  scales: {
-    x: {
-      ticks: { color: "#E5E7EB", font: { size: 10 } },
-      grid: { color: "rgba(148, 163, 184, 0.2)" }
-    },
-    y: {
-      ticks: { color: "#E5E7EB", font: { size: 10 } },
-      grid: { color: "rgba(148, 163, 184, 0.2)" }
-    }
+(() => {
+  "use strict";
+  const $ = (s) => document.querySelector(s),
+    $$ = (s) => [...document.querySelectorAll(s)];
+  const NS = "http://www.w3.org/2000/svg",
+    red = "#c92e43",
+    sage = "#718177",
+    ink = "#242522";
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+  const fmt = (n) => Math.round(n).toLocaleString("ko-KR");
+  const mean = (rows) =>
+    rows.length ? rows.reduce((s, g) => s + g.관중수, 0) / rows.length : 0;
+  function el(tag, attrs = {}, text) {
+    const n = document.createElementNS(NS, tag);
+    Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v));
+    if (text !== undefined) n.textContent = text;
+    return n;
   }
-};
-
-// --- LG Sakers 데이터 로직 (24-25까지만 필터링) ---
-fetch("lg_crowd_clean.json")
-  .then(res => res.json())
-  .then(data => {
-    const targetSeason = "2024-2025";
-    const seasonAvgEl = document.getElementById("heroSeasonAvg");
-    const weekendAvgEl = document.getElementById("heroWeekendAvg");
-    const weekdayAvgEl = document.getElementById("heroWeekdayAvg");
-    
-    if (seasonAvgEl && data.season_avg[targetSeason]) seasonAvgEl.textContent = data.season_avg[targetSeason].toLocaleString();
-    if (weekendAvgEl && data.season_weekend_avg[targetSeason]) weekendAvgEl.textContent = data.season_weekend_avg[targetSeason].toLocaleString();
-    if (weekdayAvgEl && data.season_weekday_avg[targetSeason]) weekdayAvgEl.textContent = data.season_weekday_avg[targetSeason].toLocaleString();
-
-    // 1. 시즌별 평균 관중수
-    const seasonAvgCtx = document.getElementById("seasonAvgCrowdChart");
-    if (seasonAvgCtx) {
-      const seasons = Object.keys(data.season_avg).sort().filter(s => s <= targetSeason);
-      new Chart(seasonAvgCtx, {
-        type: "bar",
-        data: {
-          labels: seasons,
-          datasets: [{ label: "시즌별 평균 관중수", data: seasons.map(s => data.season_avg[s]), backgroundColor: "#FFC72C" }]
+  function label(svg, x, y, text, attrs = {}) {
+    svg.append(
+      el(
+        "text",
+        {
+          x,
+          y,
+          fill: "#6b6d65",
+          "font-size": 13,
+          "font-family": "Noto Sans KR, sans-serif",
+          ...attrs,
         },
-        options: commonOptions
-      });
+        text,
+      ),
+    );
+  }
+  function frame(svg, max, rows = 5) {
+    svg.replaceChildren();
+    if (svg.id === "crowdChart") {
+      const width =
+        innerWidth < 761 ? Math.max(260, svg.parentElement.clientWidth) : 900;
+      svg.setAttribute(
+        "viewBox",
+        `0 0 ${width} ${innerWidth < 761 ? 280 : 320}`,
+      );
     }
-
-    // 2. 시즌별 주말 vs 주중 평균
-    const weekendWeekdayCtx = document.getElementById("weekendWeekdayChart");
-    if (weekendWeekdayCtx) {
-      const seasons = Object.keys(data.season_weekend_avg).sort().filter(s => s <= targetSeason);
-      new Chart(weekendWeekdayCtx, {
-        type: "bar",
-        data: {
-          labels: seasons,
-          datasets: [
-            { label: "주말 평균 (토·일)", data: seasons.map(s => data.season_weekend_avg[s]), backgroundColor: "#FFC72C" },
-            { label: "주중 평균 (월~금)", data: seasons.map(s => data.season_weekday_avg[s]), backgroundColor: "rgba(148, 163, 184, 0.6)" }
-          ]
-        },
-        options: commonOptions
-      });
+    const box = svg.viewBox.baseVal,
+      w = box.width,
+      h = box.height;
+    const left = 52,
+      right = w - 22,
+      top = 25,
+      bottom = h - 46;
+    const y = (v) => bottom - (v / max) * (bottom - top);
+    for (let i = 0; i <= rows; i++) {
+      const v = (max / rows) * i;
+      svg.append(
+        el("line", {
+          x1: left,
+          x2: right,
+          y1: y(v),
+          y2: y(v),
+          stroke: "#d5d9cd",
+          "stroke-dasharray": i ? "3 6" : "none",
+        }),
+      );
+      label(
+        svg,
+        left - 12,
+        y(v) + 4,
+        v >= 1000 ? (v / 1000).toLocaleString("ko-KR") + "k" : fmt(v),
+        { "text-anchor": "end", "font-size": 12 },
+      );
     }
-
-    // 3. 경기별 관중수 (페이지네이션 포함)
-    const allCrowdData = data.game_by_game.filter(g => g.날짜 < "2025-05-01");
-    allCrowdData.sort((a, b) => new Date(b.날짜) - new Date(a.날짜));
-    
-    let currentCrowdIndex = 0;
-    const CROWD_PER_PAGE = 10;
-    const crowdCtx = document.getElementById("crowdChart");
-    const prevBtn = document.getElementById("prevCrowdBtn");
-    const nextBtn = document.getElementById("nextCrowdBtn");
-    let crowdChartInstance = null;
-
-    function updateCrowdChart() {
-      if (!crowdCtx || allCrowdData.length === 0) return;
-      const startIndex = currentCrowdIndex;
-      const endIndex = Math.min(startIndex + CROWD_PER_PAGE, allCrowdData.length);
-      const currentData = allCrowdData.slice(startIndex, endIndex);
-      const sortedData = [...currentData].sort((a, b) => new Date(a.날짜) - new Date(b.날짜));
-      
-      const labels = sortedData.map(r => r.날짜);
-      const values = sortedData.map(r => r.관중수);
-      const pointColors = sortedData.map(r => r.is_weekend ? "#FFC72C" : "#94A3B8");
-
-      if (prevBtn) prevBtn.disabled = currentCrowdIndex + CROWD_PER_PAGE >= allCrowdData.length;
-      if (nextBtn) nextBtn.disabled = currentCrowdIndex === 0;
-
-      if (crowdChartInstance) {
-        crowdChartInstance.data.labels = labels;
-        crowdChartInstance.data.datasets[0].data = values;
-        crowdChartInstance.data.datasets[0].pointBackgroundColor = pointColors;
-        crowdChartInstance.update();
-      } else {
-        crowdChartInstance = new Chart(crowdCtx, {
-          type: "line",
-          data: {
-            labels: labels,
-            datasets: [{
-              label: "홈 관중수",
-              data: values,
-              borderColor: "#FFC72C",
-              backgroundColor: "rgba(255, 199, 44, 0.2)",
-              tension: 0.3,
-              pointRadius: 6,
-              pointBackgroundColor: pointColors
-            }]
-          },
-          options: commonOptions
+    return { w, h, left, right, top, bottom, y };
+  }
+  function bars(svg, labels, series, opts = {}) {
+    const maximum = Math.max(
+      1,
+      ...series.flatMap((s) => s.values.filter(Number.isFinite)),
+    );
+    const max = Math.ceil(maximum / 1000) * 1000;
+    const f = frame(svg, max);
+    const cell = (f.right - f.left) / labels.length;
+    labels.forEach((text, i) => {
+      const skip = labels.length > 9 ? Math.ceil(labels.length / 7) : 1;
+      if (i % skip === 0 || i === labels.length - 1)
+        label(svg, f.left + cell * (i + 0.5), f.bottom + 25, text, {
+          "text-anchor": "middle",
+          "font-size": 12,
         });
-      }
-    }
-
-    if (crowdCtx) updateCrowdChart();
-    if (prevBtn) prevBtn.addEventListener("click", () => { currentCrowdIndex += CROWD_PER_PAGE; updateCrowdChart(); });
-    if (nextBtn) nextBtn.addEventListener("click", () => { currentCrowdIndex -= CROWD_PER_PAGE; updateCrowdChart(); });
-  });
-
-// --- 벤치마킹 분석 ---
-fetch("kbl_benchmark.json")
-  .then(res => res.json())
-  .then(benchmarkData => {
-    fetch("lg_crowd_clean.json").then(res => res.json()).then(lgData => {
-      const lgVsLeagueCtx = document.getElementById("lgVsLeagueChart");
-      if (lgVsLeagueCtx) {
-        const seasons = Object.keys(lgData.season_avg).sort().filter(s => s <= "2024-2025");
-        new Chart(lgVsLeagueCtx, {
-          type: "line",
-          data: {
-            labels: seasons,
-            datasets: [
-              { label: "LG 세이커스", data: seasons.map(s => lgData.season_avg[s]), borderColor: "#FFC72C", tension: 0.3 },
-              { label: "KBL 리그 평균", data: seasons.map(s => benchmarkData.league_avg_by_season[s] || 0), borderColor: "#94A3B8", borderDash: [5, 5], tension: 0.3 }
-            ]
-          },
-          options: commonOptions
+      series.forEach((s, j) => {
+        const value = s.values[i];
+        if (!Number.isFinite(value)) return;
+        const width = Math.min(54, (cell * 0.65) / series.length);
+        const x =
+          f.left +
+          cell * (i + 0.5) +
+          (j - (series.length - 1) / 2) * width -
+          width / 2;
+        const rect = el("rect", {
+          x,
+          y: f.y(value),
+          width: Math.max(2, width - 2),
+          height: Math.max(0, f.bottom - f.y(value)),
+          fill: s.color || red,
         });
-      }
-
-      const teamRankingCtx = document.getElementById("teamRankingChart");
-      if (teamRankingCtx) {
-        const teams = benchmarkData.team_ranking_2024_2025;
-        if (teams) {
-          const teamLabels = teams.map(t => t.team);
-          const attendances = teams.map(t => t.avg_attendance);
-          new Chart(teamRankingCtx, {
-            type: "bar",
-            data: {
-              labels: teamLabels,
-              datasets: [{ label: "평균 관중수", data: attendances, backgroundColor: teamLabels.map(t => t === "창원 LG" ? "#FFC72C" : "#94A3B8") }]
-            },
-            options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+        rect.append(el("title", {}, `${text} · ${s.name} ${fmt(value)}명`));
+        svg.append(rect);
+        if (opts.values)
+          label(svg, x + width / 2, f.y(value) - 10, fmt(value), {
+            "text-anchor": "middle",
+            "font-size": 13,
+            fill: ink,
+          });
+      });
+    });
+    svg.setAttribute(
+      "aria-label",
+      opts.summary || svg.getAttribute("aria-label"),
+    );
+  }
+  function lines(svg, labels, series, opts = {}) {
+    const maximum = Math.max(
+      1,
+      ...series.flatMap((s) => s.values.filter(Number.isFinite)),
+    );
+    const max = Math.ceil(maximum / 1000) * 1000;
+    const f = frame(svg, max);
+    const x = (i) =>
+      f.left +
+      15 +
+      (i * (f.right - f.left - 30)) / Math.max(1, labels.length - 1);
+    const skip =
+      labels.length > 10 || (f.w < 450 && labels.length > 5)
+        ? Math.ceil(labels.length / (f.w < 450 ? 4 : 7))
+        : 1;
+    labels.forEach((text, i) => {
+      if (i % skip === 0 || i === labels.length - 1)
+        label(svg, x(i), f.bottom + 25, text, {
+          "text-anchor": "middle",
+          "font-size": 12,
+        });
+    });
+    series.forEach((s) => {
+      let started = false;
+      const d = s.values
+        .map((v, i) => {
+          if (!Number.isFinite(v)) {
+            started = false;
+            return "";
+          }
+          const part = `${started ? "L" : "M"}${x(i)},${f.y(v)}`;
+          started = true;
+          return part;
+        })
+        .join(" ");
+      const path = el("path", {
+        d,
+        fill: "none",
+        stroke: s.color || red,
+        "stroke-width": 2,
+        "stroke-linejoin": "round",
+      });
+      path.append(el("title", {}, s.name));
+      if (s.dashed) path.setAttribute("stroke-dasharray", "5 5");
+      svg.append(path);
+      if (opts.legend)
+        label(svg, f.left + series.indexOf(s) * 145, 13, s.name, {
+          fill: s.color,
+          "font-size": 14,
+        });
+      s.values.forEach((v, i) => {
+        if (!Number.isFinite(v)) return;
+        const color = opts.colors ? opts.colors[i] : s.color || red;
+        const c = el("circle", {
+          cx: x(i),
+          cy: f.y(v),
+          r: opts.onSelect ? 5 : 3.5,
+          fill: color,
+          stroke: "#f5f4ef",
+          "stroke-width": 1.5,
+          class: "chart-mark",
+        });
+        c.append(el("title", {}, `${labels[i]} · ${s.name} ${fmt(v)}명`));
+        if (opts.onSelect) {
+          c.setAttribute("role", "button");
+          c.setAttribute("tabindex", "0");
+          c.setAttribute("aria-label", `${labels[i]} 관중 ${fmt(v)}명`);
+          c.addEventListener("click", () => opts.onSelect(i));
+          c.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              opts.onSelect(i);
+            }
           });
         }
+        svg.append(c);
+      });
+    });
+  }
+  function shortSeason(s) {
+    return s.slice(2, 4) + "–" + s.slice(-2);
+  }
+  let statusTimer;
+  function status(text) {
+    $("#chart-status").textContent = text;
+    $("#chart-status").classList.add("is-visible");
+    clearTimeout(statusTimer);
+    statusTimer = setTimeout(
+      () => $("#chart-status").classList.remove("is-visible"),
+      3000,
+    );
+  }
+  let ticking = false;
+  function scrollPaint() {
+    ticking = false;
+    const max = document.documentElement.scrollHeight - innerHeight;
+    $(".progress i").style.transform =
+      `scaleX(${Math.max(0, Math.min(1, scrollY / Math.max(1, max)))})`;
+    let current = "";
+    $$("header nav a").forEach((a) => {
+      const s = $(a.getAttribute("href"));
+      if (s.getBoundingClientRect().top < innerHeight * 0.4)
+        current = a.getAttribute("href");
+    });
+    $$("header nav a").forEach((a) =>
+      a.classList.toggle("is-current", a.getAttribute("href") === current),
+    );
+  }
+  addEventListener(
+    "scroll",
+    () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(scrollPaint);
       }
-    });
-  });
-
-// --- 시즌별 트렌드 (24-25만) ---
-fetch("season_trends.json")
-  .then(res => res.json())
-  .then(trendData => {
-    // 1. 라운드별 관중수 패턴
-    const roundCtx = document.getElementById("roundChart");
-    if (roundCtx && trendData.round_avg_2024_2025) {
-      const rounds = Object.keys(trendData.round_avg_2024_2025).sort((a, b) => parseInt(a.replace('라운드','')) - parseInt(b.replace('라운드','')));
-      const seasonAvg = trendData.season_trends["2024-2025"].total_avg;
-      new Chart(roundCtx, {
-        type: "bar",
-        data: {
-          labels: rounds.map(r => r.replace('라운드', 'R')),
-          datasets: [{ label: "2024-2025 시즌", data: rounds.map(r => trendData.round_avg_2024_2025[r].avg_attendance), backgroundColor: "rgba(255, 199, 44, 0.6)" }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            tooltip: {
-              callbacks: {
-                label: (context) => `관중수: ${context.parsed.y.toLocaleString()}명`,
-                afterLabel: (context) => `평균 대비: ${context.parsed.y - seasonAvg > 0 ? '+' : ''}${(context.parsed.y - seasonAvg).toLocaleString()}명`
-              }
-            }
-          }
+    },
+    { passive: true },
+  );
+  addEventListener("resize", scrollPaint, { passive: true });
+  scrollPaint();
+  const observer = new IntersectionObserver(
+    (entries) =>
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add("is-visible");
+          observer.unobserve(e.target);
         }
-      });
-    }
-
-    // 2. 월별 관중수 트렌드
-    const monthlyTrendCtx = document.getElementById("monthlyTrendChart");
-    if (monthlyTrendCtx && trendData.monthly_avg_2024_2025) {
-      const months = Object.keys(trendData.monthly_avg_2024_2025).sort();
-      new Chart(monthlyTrendCtx, {
-        type: "line",
-        data: {
-          labels: months.map(m => m.split('-')[1] + '월'),
-          datasets: [{ label: "월별 평균 관중수", data: months.map(m => trendData.monthly_avg_2024_2025[m]), borderColor: "#FFC72C", fill: true, backgroundColor: "rgba(255, 199, 44, 0.1)", tension: 0.3 }]
-        },
-        options: commonOptions
-      });
-    }
-
-    // 3. 특별 이벤트 목록
-    const specialEventsList = document.getElementById("specialEventsList");
-    if (specialEventsList && trendData.special_events_2024_2025) {
-      const seasonAvg = trendData.season_trends["2024-2025"].total_avg;
-      specialEventsList.innerHTML = "";
-      trendData.special_events_2024_2025.forEach(event => {
-        const date = new Date(event.date);
-        const diffPercent = (((event.attendance - seasonAvg) / seasonAvg) * 100).toFixed(1);
-        const eventDiv = document.createElement("div");
-        eventDiv.className = "flex items-center justify-between p-2 bg-white/5 rounded-lg";
-        eventDiv.innerHTML = `<div><span class="text-yellow-300 font-semibold">${date.getMonth()+1}/${date.getDate()}</span></div><div class="text-right"><div class="text-white font-semibold">${event.attendance.toLocaleString()}명</div><div class="text-emerald-400 text-[10px]">+${diffPercent}%</div></div>`;
-        specialEventsList.appendChild(eventDiv);
-      });
-    }
+      }),
+    { threshold: 0.08 },
+  );
+  $$(".section-head, .finding, .high-games, .method-grid").forEach((n) => {
+    n.classList.add("reveal");
+    observer.observe(n);
   });
-
-// --- 케이스스터디 데이터 ---
-const jeonbukData = [
-  { season: "24시즌", attendance: 295642, games: 19 }, { season: "23시즌", attendance: 238759, games: 19 },
-  { season: "22시즌", attendance: 114328, games: 19 }, { season: "21시즌", attendance: 82471, games: 19 },
-  { season: "20시즌", attendance: 16808, games: 14 }, { season: "19시즌", attendance: 278738, games: 20 },
-  { season: "18시즌", attendance: 226224, games: 19 }, { season: "17시즌", attendance: 221579, games: 19 },
-  { season: "16시즌", attendance: 318921, games: 19 }, { season: "15시즌", attendance: 330856, games: 19 },
-  { season: "14시즌", attendance: 249954, games: 19 }, { season: "13시즌", attendance: 193060, games: 19 }
-];
-
-const kbStarsData = [
-  { season: "2011-2012", attendance: 43086 }, { season: "12-13", attendance: 29616 },
-  { season: "13-14", attendance: 39372 }, { season: "14-15", attendance: 39234 },
-  { season: "15-16", attendance: 36914 }, { season: "16-17", attendance: 27578 },
-  { season: "17-18", attendance: 30598 }, { season: "18-19", attendance: 37534 },
-  { season: "19-20", attendance: 22612 }, { season: "20-21", attendance: 2282 },
-  { season: "21-22", attendance: 15396 }, { season: "22-23", attendance: 21006 },
-  { season: "23-24", attendance: 36118 }, { season: "24-25", attendance: 32895 }
-];
-
-const ssgData = [
-  { year: "2021년", total: 105534, avgPerGame: 2574, weekdays: { tue: null, wed: null, thu: null, fri: null, sat: null, sun: null } },
-  { year: "2022년", total: 981546, avgPerGame: 13633, weekdays: { tue: 7654, wed: 8120, thu: 8410, fri: 13850, sat: 19850, sun: 17200 } },
-  { year: "2023년", total: 1068211, avgPerGame: 14836, weekdays: { tue: 9215, wed: 9840, thu: 11353, fri: 14920, sat: 21500, sun: 18950 } },
-  { year: "2024년", total: 1143773, avgPerGame: 15886, weekdays: { tue: 10872, wed: 11250, thu: 13311, fri: 16550, sat: 22100, sun: 20450 } },
-  { year: "2025년", total: 1281093, avgPerGame: 17793, weekdays: { tue: 12940, wed: 13210, thu: 14470, fri: 18920, sat: 22950, sun: 22600 } }
-];
-
-function initCaseStudy() {
-  // 전북현대
-  const jbCtx = document.getElementById("jeonbukChart");
-  if (jbCtx) new Chart(jbCtx, { type: "bar", data: { labels: jeonbukData.map(d => d.season), datasets: [{ label: "총 관중수", data: jeonbukData.map(d => d.attendance), backgroundColor: "#00A651" }] }, options: commonOptions });
-  const jbTable = document.getElementById("jeonbukTableBody");
-  if (jbTable) { jbTable.innerHTML = ""; jeonbukData.forEach(d => { jbTable.innerHTML += `<tr><td class="py-2 px-4">${d.season}</td><td class="text-right py-2 px-4">${d.attendance.toLocaleString()}명</td><td class="text-right py-2 px-4">${Math.round(d.attendance/d.games).toLocaleString()}명</td></tr>`; }); }
-
-  // KB스타즈
-  const kbCtx = document.getElementById("kbStarsChart");
-  if (kbCtx) new Chart(kbCtx, { type: "bar", data: { labels: kbStarsData.map(d => d.season), datasets: [{ label: "관중수", data: kbStarsData.map(d => d.attendance), backgroundColor: "#FFC72C" }] }, options: commonOptions });
-  const kbTable = document.getElementById("kbStarsTableBody");
-  if (kbTable) { kbTable.innerHTML = ""; kbStarsData.forEach(d => { kbTable.innerHTML += `<tr><td class="py-2 px-4">${d.season}</td><td class="text-right py-2 px-4">${d.attendance.toLocaleString()}명</td></tr>`; }); }
-
-  // SSG 랜더스
-  const ssgTotalCtx = document.getElementById("ssgTotalChart");
-  if (ssgTotalCtx) new Chart(ssgTotalCtx, { type: "bar", data: { labels: ssgData.map(d => d.year), datasets: [{ label: "총 관중수", data: ssgData.map(d => d.total), backgroundColor: "#C8102E" }] }, options: commonOptions });
-  
-  const ssgAvgCtx = document.getElementById("ssgAvgChart");
-  if (ssgAvgCtx) new Chart(ssgAvgCtx, { type: "line", data: { labels: ssgData.map(d => d.year), datasets: [{ label: "경기당 평균 관중수", data: ssgData.map(d => d.avgPerGame), borderColor: "#C8102E", fill: true, backgroundColor: "rgba(200,16,46,0.1)", tension: 0.3 }] }, options: commonOptions });
-
-  const ssgWeekdayCtx = document.getElementById("ssgWeekdayChart");
-  if (ssgWeekdayCtx) {
-    const yearsWithData = ssgData.filter(d => d.weekdays.tue !== null);
-    new Chart(ssgWeekdayCtx, {
-      type: "bar",
-      data: {
-        labels: ["평일(화~목)", "주말(금~일)"],
-        datasets: yearsWithData.map((d, i) => ({
-          label: d.year,
-          data: [Math.round((d.weekdays.tue + d.weekdays.wed + d.weekdays.thu)/3), Math.round((d.weekdays.fri + d.weekdays.sat + d.weekdays.sun)/3)],
-          backgroundColor: `rgba(200,16,46,${0.2 + (i*0.2)})`,
-          borderColor: "#C8102E",
-          borderWidth: 1
-        }))
+  const seats = $("#court-seats");
+  for (let i = 0; i < 36; i++) {
+    const x = 80 + (i % 18) * 25,
+      y = i < 18 ? 14 : 377;
+    seats.append(
+      el("rect", {
+        x,
+        y,
+        width: 14,
+        height: 7,
+        rx: 1,
+        fill: i % 7 === 0 ? "#c92e43" : "#afb7a4",
+      }),
+    );
+  }
+  async function load() {
+    const [crowd, benchmark, trends] = await Promise.all(
+      ["lg_crowd_clean.json", "kbl_benchmark.json", "season_trends.json"].map(
+        async (path) => {
+          const r = await fetch(path);
+          if (!r.ok) throw Error(path);
+          return r.json();
+        },
+      ),
+    );
+    const seasons = Object.keys(crowd.season_avg)
+      .filter((s) => s <= "2024-2025")
+      .sort();
+    const all = crowd.game_by_game
+      .filter((g) => g.날짜 < "2025-05-01")
+      .sort((a, b) => a.날짜.localeCompare(b.날짜));
+    let season = "2024-2025",
+      filter = "all",
+      page = 0;
+    const PAGE = 10;
+    function seasonRows(value) {
+      const start = Number(value.slice(0, 4));
+      return all.filter(
+        (g) => g.날짜 >= `${start}-09-01` && g.날짜 < `${start + 1}-06-01`,
+      );
+    }
+    const latest = seasonRows(season);
+    $("#heroSeasonAvg").textContent = fmt(mean(latest));
+    $("#heroWeekendAvg").innerHTML =
+      fmt(mean(latest.filter((g) => g.is_weekend))) + "<small>명</small>";
+    $("#heroWeekdayAvg").innerHTML =
+      fmt(mean(latest.filter((g) => !g.is_weekend))) + "<small>명</small>";
+    seasons.forEach((s) => {
+      const o = document.createElement("option");
+      o.value = s;
+      o.textContent = shortSeason(s);
+      o.selected = s === season;
+      $("#season-select").append(o);
+    });
+    function renderGames() {
+      const seasonGames = seasonRows(season);
+      const rows = seasonGames.filter(
+        (g) => filter === "all" || g.is_weekend === (filter === "weekend"),
+      );
+      const pages = Math.max(1, Math.ceil(rows.length / PAGE));
+      page = Math.max(0, Math.min(page, pages - 1));
+      const displayed = rows.slice(page * PAGE, (page + 1) * PAGE);
+      $("#crowdMeta").textContent =
+        `${shortSeason(season)} · ${rows.length}경기 · 평균 ${fmt(mean(rows))}명`;
+      $("#page-info").textContent = `${page + 1} / ${pages}`;
+      $("#prevCrowdBtn").disabled = page === 0;
+      $("#nextCrowdBtn").disabled = page >= pages - 1;
+      $$("[data-filter]").forEach((b) =>
+        b.setAttribute("aria-pressed", b.dataset.filter === filter),
+      );
+      lines(
+        $("#crowdChart"),
+        displayed.map((g) => g.날짜.slice(5).replace("-", "/")),
+        [
+          {
+            name: "관중",
+            values: displayed.map((g) => g.관중수),
+            color: "#bfc5b5",
+          },
+        ],
+        {
+          colors: displayed.map((g) => (g.is_weekend ? red : sage)),
+          onSelect: (i) => {
+            const g = displayed[i];
+            $("#crowd-detail").textContent =
+              `${g.날짜} · ${g.is_weekend ? "주말" : "주중"} · 관중 ${fmt(g.관중수)}명`;
+          },
+        },
+      );
+      $("#crowdChart").setAttribute(
+        "aria-label",
+        `${shortSeason(season)} 경기별 관중, ${rows.length}경기 평균 ${fmt(mean(rows))}명. 현재 ${page + 1}/${pages}페이지.`,
+      );
+      $("#game-table").replaceChildren();
+      rows.forEach((g) => {
+        const tr = document.createElement("tr");
+        [g.날짜, g.is_weekend ? "주말" : "주중", fmt(g.관중수) + "명"].forEach(
+          (v) => {
+            const td = document.createElement("td");
+            td.textContent = v;
+            tr.append(td);
+          },
+        );
+        $("#game-table").append(tr);
+      });
+    }
+    $("#season-select").addEventListener("change", (e) => {
+      season = e.target.value;
+      page = Math.max(
+        0,
+        Math.ceil(
+          seasonRows(season).filter(
+            (g) => filter === "all" || g.is_weekend === (filter === "weekend"),
+          ).length / PAGE,
+        ) - 1,
+      );
+      $("#crowd-detail").textContent =
+        "점을 선택하면 경기 자료를 확인할 수 있습니다.";
+      renderGames();
+    });
+    $$("[data-filter]").forEach((b) =>
+      b.addEventListener("click", () => {
+        filter = b.dataset.filter;
+        page = 0;
+        renderGames();
+      }),
+    );
+    $("#prevCrowdBtn").addEventListener("click", () => {
+      page--;
+      renderGames();
+    });
+    $("#nextCrowdBtn").addEventListener("click", () => {
+      page++;
+      renderGames();
+    });
+    page = Math.ceil(latest.length / PAGE) - 1;
+    renderGames();
+    addEventListener("resize", renderGames, { passive: true });
+    $("#table-toggle").addEventListener("click", () => {
+      const opening = $("#game-table-wrap").hidden;
+      $("#game-table-wrap").hidden = !opening;
+      $("#table-toggle").setAttribute("aria-expanded", String(opening));
+      $("#table-toggle").textContent = opening
+        ? "경기 데이터 접기 −"
+        : "경기 데이터 펼치기 +";
+    });
+    bars($("#seasonAvgCrowdChart"), seasons.map(shortSeason), [
+      {
+        name: "평균 관중",
+        values: seasons.map((s) => crowd.season_avg[s]),
+        color: red,
       },
-      options: commonOptions
+    ]);
+    bars($("#weekendWeekdayChart"), seasons.map(shortSeason), [
+      {
+        name: "주말",
+        values: seasons.map((s) => crowd.season_weekend_avg[s]),
+        color: red,
+      },
+      {
+        name: "주중",
+        values: seasons.map((s) => crowd.season_weekday_avg[s]),
+        color: sage,
+      },
+    ]);
+    lines($("#lgVsLeagueChart"), seasons.map(shortSeason), [
+      {
+        name: "LG 분석 자료",
+        values: seasons.map((s) => crowd.season_avg[s]),
+        color: red,
+      },
+      {
+        name: "리그 참고 자료",
+        values: seasons.map((s) => benchmark.league_avg_by_season[s] ?? null),
+        color: sage,
+        dashed: true,
+      },
+    ]);
+    const ranking = benchmark.team_ranking_2024_2025;
+    const rankChart = $("#teamRankingChart");
+    rankChart.replaceChildren();
+    ranking.forEach((t, i) => {
+      const y = 25 + i * 38;
+      label(rankChart, 115, y + 15, t.team, {
+        "text-anchor": "end",
+        "font-size": 14,
+        fill: t.team === "창원 LG" ? red : ink,
+      });
+      rankChart.append(
+        el("rect", {
+          x: 135,
+          y,
+          width: (t.avg_attendance / 5000) * 410,
+          height: 24,
+          fill: t.team === "창원 LG" ? red : "#bec5b5",
+        }),
+      );
+      label(
+        rankChart,
+        145 + (t.avg_attendance / 5000) * 410,
+        y + 17,
+        fmt(t.avg_attendance),
+        { "font-size": 14, fill: ink },
+      );
+    });
+    const targetRows = seasonRows("2024-2025");
+    const months = [...new Set(targetRows.map((g) => g.날짜.slice(0, 7)))];
+    lines(
+      $("#monthlyTrendChart"),
+      months.map((m) => Number(m.slice(-2)) + "월"),
+      [
+        {
+          name: "월 평균",
+          values: months.map((m) =>
+            mean(targetRows.filter((g) => g.날짜.startsWith(m))),
+          ),
+          color: red,
+        },
+      ],
+    );
+    const rounds = Object.entries(trends.round_avg_2024_2025);
+    bars(
+      $("#roundChart"),
+      rounds.map(([r]) => r.replace("라운드", "R")),
+      [
+        {
+          name: "라운드 평균",
+          values: rounds.map(([, r]) => r.avg_attendance),
+          color: red,
+        },
+      ],
+      { values: true },
+    );
+    [...targetRows]
+      .sort((a, b) => b.관중수 - a.관중수)
+      .slice(0, 8)
+      .forEach((g) => {
+        const card = document.createElement("div");
+        card.className = "high-game";
+        const s = document.createElement("span");
+        s.textContent = g.날짜;
+        const b = document.createElement("b");
+        b.textContent = fmt(g.관중수);
+        const small = document.createElement("small");
+        small.textContent = g.is_weekend ? "주말 경기" : "주중 경기";
+        card.append(s, b, small);
+        $("#specialEventsList").append(card);
+      });
+  }
+  load().catch(() => {
+    $("#crowdMeta").textContent =
+      "자료를 불러오지 못했습니다. 원자료 링크에서 확인해 주세요.";
+    status("차트 자료를 불러오지 못했습니다.");
+  });
+  const strategies = {
+    weekday: [
+      "01",
+      "WEEKDAY ACTIVATION",
+      "평일에도 올 이유가 있다면.",
+      "직장인 대상 Night Game Pass와 대학생 대상 관람 프로그램을 대안으로 제안합니다. 할인만으로 채우기보다 방문 시간과 이동 부담을 함께 검토합니다.",
+      "주중 평균 관중 2,892명",
+      "가격 · 경기 시간 · 접근성 · 운영 인력",
+      "추가 관중 · 티켓 수익 · 재방문 의향",
+    ],
+    round: [
+      "02",
+      "SEASON MOMENTUM",
+      "시즌의 낮은 지점을 먼저.",
+      "라운드별 평균 관중이 낮은 구간에 팬 참여 행사를 배치하는 안입니다. 경기 일정과 상대 팀, 공휴일 조건을 함께 확인하고 행사 전후를 비교해야 합니다.",
+      "2라운드 평균 관중 2,744명",
+      "행사 일정 · 예산 · 상대 팀 · 공휴일",
+      "조건이 비슷한 경기의 관중 차이 · 비용",
+    ],
+    local: [
+      "03",
+      "LOCAL CONNECTION",
+      "경기장 밖에서도, 창원과 연결.",
+      "선수와 지역 소상공인을 잇는 Sakers Partners를 제안합니다. 지역 팬의 일상에 구단과 만나는 접점을 만들고 참여 매장의 운영 부담도 함께 검토합니다.",
+      "연고 지역 팬의 방문 동기 탐색",
+      "협력 매장 · 참여 조건 · 운영 인력",
+      "참여 매장 수 · 행사 방문 · 티켓 전환",
+    ],
+    journey: [
+      "04",
+      "FAN JOURNEY",
+      "첫 방문이, 다음 방문으로.",
+      "예매와 방문 경험을 연결해 재방문을 돕는 혜택을 제안합니다. 관중 집계만으로 재방문율을 알 수 없어 추가 자료와 동의 절차가 필요합니다.",
+      "현재 자료는 경기별 관중 집계",
+      "데이터 확보 · 동의 · 개인정보 관리",
+      "재방문율 · 혜택 이용 · 운영 비용",
+    ],
+  };
+  $$("[data-strategy]").forEach((button) =>
+    button.addEventListener("click", () => {
+      const s = strategies[button.dataset.strategy];
+      $$("[data-strategy]").forEach((b) =>
+        b.setAttribute("aria-pressed", String(b === button)),
+      );
+      $("#strategy-content").innerHTML =
+        `<span class="strategy-no">${s[0]}</span><p class="kicker">${s[1]}</p><h3>${s[2]}</h3><p>${s[3]}</p><dl><div><dt>출발한 관찰</dt><dd>${s[4]}</dd></div><div><dt>확인할 제약</dt><dd>${s[5]}</dd></div><div><dt>검증할 지표</dt><dd>${s[6]}</dd></div></dl>`;
+    }),
+  );
+  let club = "jeonbuk",
+    clubMetric = "total",
+    selectedClubRows = [];
+  const clubInfo = {
+    jeonbuk: ["전북 현대", "FOOTBALL / K LEAGUE", "#3b7560"],
+    kb: ["KB 스타즈", "BASKETBALL / WKBL", "#a5781e"],
+    ssg: ["SSG 랜더스", "BASEBALL / KBO", red],
+  };
+  function clubRows() {
+    return [...caseStudyData[club]]
+      .reverse()
+      .map((r) => ({
+        season: r.season || r.year,
+        total: r.attendance ?? r.total,
+        average: r.games ? r.attendance / r.games : (r.avgPerGame ?? null),
+        weekdays: r.weekdays,
+      }))
+      .sort((a, b) => {
+        const year = (s) => {
+          const n = parseInt(s, 10);
+          return n < 100 ? 2000 + n : n;
+        };
+        return year(a.season) - year(b.season);
+      });
+  }
+  function renderClub(rows) {
+    selectedClubRows = rows;
+    const [name, sport, color] = clubInfo[club];
+    $("#club-name").textContent = name;
+    $("#club-sport").textContent = sport;
+    $$("[data-club-metric]").forEach((b) => {
+      b.disabled =
+        (b.dataset.clubMetric === "average" && club === "kb") ||
+        (b.dataset.clubMetric === "weekday" && club !== "ssg");
+      b.setAttribute(
+        "aria-pressed",
+        String(b.dataset.clubMetric === clubMetric),
+      );
+    });
+    if (clubMetric === "weekday") {
+      const available = rows.filter((r) => r.weekdays?.tue !== null);
+      if (available.length) {
+        lines(
+          $("#club-chart"),
+          ["화", "수", "목", "금", "토", "일"],
+          available.map((r, i) => ({
+            name: r.season,
+            values: ["tue", "wed", "thu", "fri", "sat", "sun"].map(
+              (day) => r.weekdays[day],
+            ),
+            color: ["#ad927e", "#718177", "#753847", red][i % 4],
+          })),
+          { legend: true },
+        );
+        $("#club-chart").setAttribute(
+          "aria-label",
+          available.map((r) => r.season).join(", ") +
+            " SSG 랜더스 요일별 평균 관중.",
+        );
+      } else {
+        $("#club-chart").replaceChildren();
+        label(
+          $("#club-chart"),
+          450,
+          150,
+          "선택한 기간에 요일별 자료가 없습니다.",
+          { "text-anchor": "middle", "font-size": 20 },
+        );
+      }
+    } else {
+      const average = clubMetric === "average";
+      bars(
+        $("#club-chart"),
+        rows.map((r) => r.season),
+        [
+          {
+            name: average ? "경기당 평균" : "총 관중",
+            values: rows.map((r) => (average ? r.average : r.total)),
+            color,
+          },
+        ],
+        {
+          summary: `${name} ${rows[0].season}부터 ${rows.at(-1).season}까지 ${average ? "경기당 평균" : "총 관중"} 비교`,
+        },
+      );
+    }
+    $("#club-range-note").textContent =
+      `${rows[0].season} → ${rows.at(-1).season} · ${rows.length}개 시즌 · 총 ${fmt(rows.reduce((s, r) => s + r.total, 0))}명`;
+    $("#club-table").replaceChildren();
+    rows.forEach((r) => {
+      const tr = document.createElement("tr");
+      [
+        r.season,
+        fmt(r.total) + "명",
+        r.average === null ? "자료 없음" : fmt(r.average) + "명",
+      ].forEach((v) => {
+        const td = document.createElement("td");
+        td.textContent = v;
+        tr.append(td);
+      });
+      $("#club-table").append(tr);
     });
   }
-
-  const ssgTable = document.getElementById("ssgTableBody");
-  if (ssgTable) {
-    ssgTable.innerHTML = "";
-    ssgData.forEach(d => {
-      ssgTable.innerHTML += `<tr>
-        <td class="py-2 px-4">${d.year}</td>
-        <td class="text-right py-2 px-4">${d.total.toLocaleString()}명</td>
-        <td class="text-right py-2 px-4">${d.avgPerGame.toLocaleString()}명</td>
-        <td class="text-right py-2 px-4">${d.weekdays.tue ? d.weekdays.tue.toLocaleString() : '-'}</td>
-        <td class="text-right py-2 px-4">${d.weekdays.wed ? d.weekdays.wed.toLocaleString() : '-'}</td>
-        <td class="text-right py-2 px-4">${d.weekdays.thu ? d.weekdays.thu.toLocaleString() : '-'}</td>
-        <td class="text-right py-2 px-4">${d.weekdays.fri ? d.weekdays.fri.toLocaleString() : '-'}</td>
-        <td class="text-right py-2 px-4">${d.weekdays.sat ? d.weekdays.sat.toLocaleString() : '-'}</td>
-        <td class="text-right py-2 px-4">${d.weekdays.sun ? d.weekdays.sun.toLocaleString() : '-'}</td>
-      </tr>`;
+  function selectClub(next) {
+    club = next;
+    clubMetric = "total";
+    const rows = clubRows();
+    $$("[data-club]").forEach((b) =>
+      b.setAttribute("aria-pressed", b.dataset.club === club),
+    );
+    ["#club-start", "#club-end"].forEach((id, k) => {
+      const select = $(id);
+      select.replaceChildren();
+      rows.forEach((r, i) => {
+        const o = document.createElement("option");
+        o.value = i;
+        o.textContent = r.season;
+        o.selected = k === 0 ? i === 0 : i === rows.length - 1;
+        select.append(o);
+      });
     });
+    renderClub(rows);
   }
-}
-
-initCaseStudy();
-
-// --- 화면 전환 ---
-const mainContainer = document.getElementById("mainContainer");
-const caseStudyContainer = document.getElementById("caseStudyContainer");
-const caseStudyLink = document.querySelector('a[href="#casestudy"]');
-const backToMainBtn = document.getElementById("backToMainBtn");
-
-if (caseStudyLink) caseStudyLink.addEventListener("click", (e) => { e.preventDefault(); mainContainer.classList.add("hidden"); caseStudyContainer.classList.remove("hidden"); window.scrollTo(0, 0); });
-if (backToMainBtn) backToMainBtn.addEventListener("click", () => { mainContainer.classList.remove("hidden"); caseStudyContainer.classList.add("hidden"); window.scrollTo(0, 0); });
+  $$("[data-club]").forEach((b) =>
+    b.addEventListener("click", () => selectClub(b.dataset.club)),
+  );
+  $("#club-apply").addEventListener("click", () => {
+    const a = Number($("#club-start").value),
+      b = Number($("#club-end").value);
+    if (a > b) {
+      $("#club-range-note").textContent =
+        "시작 시즌이 종료 시즌보다 늦습니다. 기간을 다시 선택해 주세요.";
+      $("#club-start").focus();
+      return;
+    }
+    renderClub(clubRows().slice(a, b + 1));
+  });
+  $$("[data-club-metric]").forEach((b) =>
+    b.addEventListener("click", () => {
+      clubMetric = b.dataset.clubMetric;
+      renderClub(selectedClubRows);
+    }),
+  );
+  selectClub("jeonbuk");
+})();
