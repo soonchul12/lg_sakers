@@ -3,6 +3,7 @@ const files = [
   "index.html",
   "styles.css",
   "charts.js",
+  "motion.js",
   "case-data.js",
   "lg_crowd_clean.json",
   "kbl_benchmark.json",
